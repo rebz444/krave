@@ -1,0 +1,29 @@
+{
+  "reward_consumption_time": 1,
+  "visual_display_duration": 1,
+  "ITI_length": 2,
+  "block_length": 50,
+  "reward_distribution": "delay1",
+  "visual_display_path": "grating 0.79",
+  "hardware_setup": "setup1",
+  "shuffle_blocks": true,
+  "auto_end": true,
+  "blocks": [
+    {
+      "id": "001",
+      "bg_reward_rate": 0.1
+    },
+    {
+      "id": "002",
+      "bg_reward_rate": 0.4
+    },
+    {
+      "id": "003",
+      "bg_reward_rate": 0.8
+    },
+    {
+      "id": "004",
+      "bg_reward_rate": 1.2
+    }
+  ]
+}

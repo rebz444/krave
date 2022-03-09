@@ -1,0 +1,1 @@
+FOOT_SIZE = 'foot_size'
