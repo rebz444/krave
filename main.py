@@ -1,4 +1,4 @@
-from krave.experiment.experiment import Experiment
+from krave.experiment.session import Session
 
 if __name__ == '__main__':
-    Experiment("exp1").run()
+    Session("exp1").test_visual_cue()
