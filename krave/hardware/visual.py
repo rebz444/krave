@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 import logging
 
 from krave import utils
@@ -22,12 +23,13 @@ class Visual:
         self.window.attributes("-fullscreen", True)
         self.window.update()
         self.window_size = (self.window.winfo_width(), self.window.winfo_height())
+        return time.time()
 
     def cue_on(self):
         if not self.window:
             logging.warning("Please initialize visual display first!")
             return
-        img = Image.open(self.cue_path)
+        img = PIL.Image.open(self.cue_path)
         img = img.resize(self.window_size)
         img = ImageTk.PhotoImage(img)
         self.cue = tk.Label(self.window, image=img)
@@ -35,15 +37,18 @@ class Visual:
         self.cue_displaying = True
         # self.window.after(self.cue_time, self.cue.destroy)
         self.window.update()
+        return time.time()
 
     def cue_off(self):
         if self.cue_on:
             self.window.after(self.cue_time, self.cue.destroy)
             self.cue_displaying = False
         self.window.update()
+        return time.time()
 
     def clean_up(self):
         self.window.destroy
+        return time.time()
 
     # def test(self):
     #     self.window = tk.Tk()

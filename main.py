@@ -1,4 +1,4 @@
 from krave.experiment.session import Session
 
 if __name__ == '__main__':
-    Session("exp1").test_visual_cue()
+    Session("exp1").test_pi()

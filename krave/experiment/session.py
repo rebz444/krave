@@ -51,3 +51,5 @@ class Session:
         self.visual.cue_off()
         time.sleep(5)
 
+    def test_pi(self):
+        print("poop")
