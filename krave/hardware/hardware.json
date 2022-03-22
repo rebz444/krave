@@ -3,7 +3,8 @@
     "desktop_ip": "10.203.24.116",
     "user_name": "Rebekah",
     "password": "shuler",
-    "water_output": [6],
-    "lick_input": [19]
+    "spouts": {
+      "1": [6, 19]
+    }
   }
 }
