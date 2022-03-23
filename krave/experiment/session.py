@@ -36,7 +36,7 @@ class Session:
                     print(f"start lick {lick_counter}")
                     lick_counter += 1
                 elif lick_change == -1:
-                    print(f"start lick {lick_counter} at {time.time()}")
+                    print(f"end lick {lick_counter} at {time.time()}")
         finally:
             GPIO.cleanup()
 

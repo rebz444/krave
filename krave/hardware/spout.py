@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+import numpy as np
 
 from krave import utils
 
@@ -12,6 +13,7 @@ class Spout:
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
         self.lick_status = 1
+        self.lick_record = np.ones([3])
         self.reward_distribution = self.exp_config['reward_distribution']
         self.base_duration = 0.05
         self.water_opened_time = None
@@ -28,7 +30,12 @@ class Spout:
         print(status)
 
     def lick_status_check(self):
-        change = GPIO.input(self.lick_pin) - self.lick_status
+        """register change only when current status is different than all three
+        previous status"""
+        self.lick_record = np.roll(self.lick_record, 1)
+        self.lick_record[0] = GPIO.input(self.lick_pin)
+        change_bool = np.all(self.lick_record != self.lick_status)
+        change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
         self.lick_status += change
         return change
 
