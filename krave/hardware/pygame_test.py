@@ -37,7 +37,7 @@ while running:
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 cue_off()
-                print("Keystroke has been released")
+                print("Space has been released")
 
     if cue_state == "on":
         cue_on(cue_x, cue_y)

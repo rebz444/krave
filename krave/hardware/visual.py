@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 import time
 import logging
 
@@ -12,6 +13,7 @@ class Visual:
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
         self.cue_name = self.exp_config['visual_cue_name']
+        self.cue_path = utils.get_path('krave.hardware', self.cue_name)
         self.cue_length = self.exp_config['visual_cue_length']
 
         self.window = None
@@ -19,6 +21,9 @@ class Visual:
         self.cue = None
         self.cue_displaying = False
         self.show_cue = False
+
+    def test_test(self):
+        print(self.cue_path)
 
     def initialize(self):
         self.window = tk.Tk()
@@ -31,20 +36,22 @@ class Visual:
         # return time.time()
 
     def test_cue(self):
-        img = Image.open(self.cue_name)
-        img = img.resize(self.window_size)
+        self.window = tk.Tk()
+        img = Image.open(self.cue_path)
+        # img = img.resize(self.window_size)
         img = ImageTk.PhotoImage(img)
         self.cue = tk.Label(self.window, image=img)
         self.cue.pack()
-        self.window.after(self.cue_name, self.cue.destroy)
-        self.cue.update()
+        self.window.after(self.cue_length, self.cue.destroy)
+        self.window.mainloop()
+
 
     def main_loop(self):
         window = tk.Tk()
         window.configure(bg="black")
         window.attributes("-fullscreen", True)
         window_size = (window.winfo_width(), window.winfo_height())
-        img = Image.open(self.cue_name)
+        img = Image.open(self.cue_path)
         img = img.resize(window_size)
         img = ImageTk.PhotoImage(img)
         window.update()
@@ -59,9 +66,6 @@ class Visual:
         window.after(6000, self.cue.destroy)
 
         window.mainloop()
-        # # run first time
-        # wait()
-        # window.after(self.cue_time, cue.destroy)
 
     # def cue_on(self):
     #     if not self.window:
