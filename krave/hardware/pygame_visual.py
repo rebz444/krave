@@ -3,7 +3,7 @@ from krave import utils
 import pygame
 
 
-class PygameVisual:
+class Visual:
     def __init__(self, exp_name, hardware_config_name):
         self.exp_name = exp_name
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
@@ -14,7 +14,7 @@ class PygameVisual:
 
         self.screen = None
         self.cue = None
-        self.cue_state = "off"
+        self.cue_displaying = False
 
     def initialize(self):
         pygame.init()
@@ -23,9 +23,9 @@ class PygameVisual:
         self.cue = pygame.image.load(self.cue_path)
 
     def cue_on(self, x, y):
-        self.cue_state = "on"
+        self.cue_displaying = True
         self.screen.blit(self.cue, (x, y))
 
     def cue_off(self):
-        self.cue_state = "off"
+        self.cue_displaying = False
 

@@ -19,10 +19,10 @@ class Spout:
         self.water_opened_time = None
         self.water_dispensing = False
 
-    def initialize_spout(self):
+    def initialize(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.lick_pin, GPIO.IN)
-        GPIO.setup(self.water_pin, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(self.water_pin, GPIO.OUT)
         return time.time()
 
     def test_spout(self):
@@ -52,12 +52,12 @@ class Spout:
         self.water_dispensing = False
         return time.time()
 
-    # def water_cleanup(self):
-    #     if self.water_dispensing and self.water_opened_time + self.base_duration < time.time():
-    #         duration = time.time() - self.water_opened_time
-    #         GPIO.output(self.water_pin, GPIO.LOW)
-    #         self.water_dispensing = False
-    #         return duration
+    def water_cleanup(self):
+        if self.water_dispensing and self.water_opened_time + self.base_duration < time.time():
+            duration = time.time() - self.water_opened_time
+            GPIO.output(self.water_pin, GPIO.LOW)
+            self.water_dispensing = False
+            return duration
 
 #     def reward_rate(self):
 #         if self.reward_distribution == "delay1":
