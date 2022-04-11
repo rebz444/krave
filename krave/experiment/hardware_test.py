@@ -46,11 +46,11 @@ class PiTest:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.visual.cue_on(x, y)
                         print("space is pressed")
-
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_SPACE:
                         self.visual.cue_off()
@@ -60,6 +60,17 @@ class PiTest:
                 self.visual.cue_on(x, y)
 
             pygame.display.update()
+
+    def test_water(self):
+        self.spout.initialize()
+        try:
+            for i in range(20):
+                self.spout.water_on()
+                time.sleep(1)
+                self.spout.water_off()
+                time.sleep(2)
+        finally:
+            GPIO.cleanup()
 
     def test_visual_with_lick(self, x, y):
         self.spout.initialize()
@@ -89,18 +100,9 @@ class PiTest:
 
                 if self.visual.cue_displaying:
                     self.visual.cue_on(x, y)
+
                 pygame.display.update()
         finally:
             GPIO.cleanup()
             print("GPIO cleaned up")
-
-    def test_water(self):
-        self.spout.initialize()
-        try:
-            for i in range(20):
-                self.spout.water_on()
-                time.sleep(1)
-                self.spout.water_off()
-                time.sleep(2)
-        finally:
-            GPIO.cleanup()
+            self.visual.quit()
