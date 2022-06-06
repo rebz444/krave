@@ -1,20 +1,24 @@
 import time
 
+from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.pygame_visual import Visual
-from krave import utils
+from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
 import pygame
 
 
 class PiTest:
-    def __init__(self, exp_name):
-        self.exp_name = exp_name
+    def __init__(self, info):
+        self.info = info
+        self.mouse = info.mouse
+        self.exp_name = info.exp_name
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
         self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
         self.visual = Visual(self.exp_name, self.hardware_name)
+        self.data_writer = DataWriter(self.info)
 
         self.running = False
 
@@ -71,8 +75,8 @@ class PiTest:
                 self.spout.water_off()
                 time.sleep(.5)
         finally:
-            GPIO.cleanup()
-            print("GPIO cleaned up")
+            self.spout.shutdown()
+            self.running = False
 
     def test_visual_with_lick(self, x, y):
         self.spout.initialize()
@@ -108,7 +112,7 @@ class PiTest:
             print("GPIO cleaned up")
             self.visual.shutdown()
 
-    def test_lick_detection(self, n_licks, time_limit=300):
+    def test_lick_with_mouse(self, n_licks, time_limit=300):
         self.spout.initialize()
         start = time.time()
         lick_counter = 0
@@ -130,3 +134,7 @@ class PiTest:
         finally:
             self.spout.shutdown()
             self.running = False
+
+    def test_data_writer(self):
+        self.data_writer.start()
+

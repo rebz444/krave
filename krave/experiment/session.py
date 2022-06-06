@@ -19,7 +19,7 @@ class Session:
 
         self.spout = Spout(self.exp_name, self.hardware_name, "1")
         self.visual = Visual(self.exp_name, self.hardware_name)
-        self.data_writer = DataWriter(self.info, self.hardware_config)
+        self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.info)
         # self.blocks = self.get_blocks()
 
     def get_config(self):
@@ -51,7 +51,7 @@ class Session:
         self.spout.initialize()
         self.visual.initialize()
         for block in self.blocks:
-            block.run(self.water, self.lick, self.visual, self.data_saver)
+            block.run(self.spout, self.visual, self.data_writer)
         self.shutdown()
 
 

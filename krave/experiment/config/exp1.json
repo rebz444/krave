@@ -12,20 +12,12 @@
   "block_type": "exp1",
   "blocks": [
     {
-      "id": "001",
-      "bg_reward_rate": 0.1
+      "id": "short",
+      "bg_length": 1
     },
     {
-      "id": "002",
-      "bg_reward_rate": 0.4
-    },
-    {
-      "id": "003",
-      "bg_reward_rate": 0.8
-    },
-    {
-      "id": "004",
-      "bg_reward_rate": 1.2
+      "id": "long",
+      "bg_reward_rate": 3
     }
   ]
 }
