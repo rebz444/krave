@@ -3,3 +3,5 @@ class Trial:
         self.trial_number = trial_number
         self.bg_reward_rate = bg_reward_rate
 
+    def run(self):
+        pass

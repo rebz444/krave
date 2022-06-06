@@ -13,7 +13,7 @@ class PiTest:
         self.exp_name = exp_name
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
-        self.spout = Spout(self.exp_name, self.hardware_name, "1")
+        self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
         self.visual = Visual(self.exp_name, self.hardware_name)
 
         self.running = False
@@ -66,11 +66,13 @@ class PiTest:
         try:
             for i in range(20):
                 self.spout.water_on()
-                time.sleep(1)
+                time.sleep(.1)
+                print('drop delivered')
                 self.spout.water_off()
-                time.sleep(2)
+                time.sleep(.5)
         finally:
             GPIO.cleanup()
+            print("GPIO cleaned up")
 
     def test_visual_with_lick(self, x, y):
         self.spout.initialize()
@@ -78,7 +80,6 @@ class PiTest:
         time_limit = 30
         start = time.time()
         lick_counter = 0
-
         try:
             while start + time_limit > time.time():
                 self.running = True
@@ -105,4 +106,27 @@ class PiTest:
         finally:
             GPIO.cleanup()
             print("GPIO cleaned up")
-            self.visual.quit()
+            self.visual.shutdown()
+
+    def test_lick_detection(self, n_licks, time_limit=300):
+        self.spout.initialize()
+        start = time.time()
+        lick_counter = 0
+        lick_display_counter = 0
+        try:
+            while start + time_limit > time.time():
+                self.spout.water_cleanup()
+                self.running = True
+                lick_change = self.spout.lick_status_check()
+                if lick_change == 1:
+                    lick_counter += 1
+                    lick_display_counter += 1
+                    print(f"start lick {lick_display_counter}")
+                elif lick_change == -1:
+                    print(f"end lick {lick_display_counter} at {time.time()-start:.2f} seconds")
+                if lick_counter >= n_licks:
+                    lick_counter = 0
+                    self.spout.water_on()
+        finally:
+            self.spout.shutdown()
+            self.running = False

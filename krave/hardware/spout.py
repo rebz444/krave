@@ -6,7 +6,7 @@ from krave import utils
 
 
 class Spout:
-    def __init__(self, exp_name, hardware_config_name, spout_name):
+    def __init__(self, exp_name, hardware_config_name, spout_name, duration):
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
@@ -15,7 +15,7 @@ class Spout:
         self.lick_status = 1
         self.lick_record = np.ones([3])
         self.reward_distribution = self.exp_config['reward_distribution']
-        self.base_duration = 0.05
+        self.base_duration = duration
         self.water_opened_time = None
         self.water_dispensing = False
 
@@ -25,9 +25,9 @@ class Spout:
         GPIO.setup(self.water_pin, GPIO.OUT)
         return time.time()
 
-    def test_spout(self):
-        status = GPIO.input(self.lick_pin)
-        print(status)
+    # def test_spout(self):
+    #     status = GPIO.input(self.lick_pin)
+    #     print(status)
 
     def lick_status_check(self):
         """register change only when current status is different than all three
@@ -58,6 +58,11 @@ class Spout:
             GPIO.output(self.water_pin, GPIO.LOW)
             self.water_dispensing = False
             return duration
+
+    def shutdown(self):
+        GPIO.cleanup()
+        print("GPIO cleaned up")
+        return time.time()
 
 #     def reward_rate(self):
 #         if self.reward_distribution == "delay1":

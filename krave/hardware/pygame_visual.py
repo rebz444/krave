@@ -36,6 +36,7 @@ class Visual:
         self.cue_displaying = False
         return time.time()
 
-    def quit(self):
+    def shutdown(self):
         pygame.quit()
         self.screen_ready = False
+        return time.time()

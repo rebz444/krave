@@ -1,19 +1,25 @@
 import logging
+import time
 
-from krave.experiment.block import BlockDefault, BlockExp2
-from krave.hardware.spout import Spout
-# from krave.hardware.visual import Visual
 from krave import utils
+from krave.output.data_writer import DataWriter
+from krave.experiment.block import BlockDefault, BlockExp2
+from krave.hardware.pygame_visual import Visual
+from krave.hardware.spout import Spout
 
 
 class Session:
-    def __init__(self, exp_name):
-        self.exp_name = exp_name
+    def __init__(self, info):
+        self.info = info
+        self.exp_name = info.exp_name
+        self.mouse = info.mouse
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
+        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_name]
+
         self.spout = Spout(self.exp_name, self.hardware_name, "1")
-        # self.visual = Visual(self.exp_name, self.hardware_name)
-        # self.data_writer = DataWriter(self.config_name)
+        self.visual = Visual(self.exp_name, self.hardware_name)
+        self.data_writer = DataWriter(self.info, self.hardware_config)
         # self.blocks = self.get_blocks()
 
     def get_config(self):
@@ -34,6 +40,11 @@ class Session:
         """Get list of trials from config."""
         pass
 
+    def shutdown(self):
+        self.spout.shutdown()
+        self.visual.shutdown()
+        return time.time()
+
     def run(self):
         """Run experiment."""
         logging.info(f"Starting session for experiment {self.exp_name}")
@@ -42,7 +53,6 @@ class Session:
         for block in self.blocks:
             block.run(self.water, self.lick, self.visual, self.data_saver)
         self.shutdown()
-
 
 
 
