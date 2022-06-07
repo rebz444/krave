@@ -10,15 +10,14 @@ import pygame
 
 
 class PiTest:
-    def __init__(self, info):
-        self.info = info
-        self.mouse = info.mouse
-        self.exp_name = info.exp_name
+    def __init__(self, mouse, exp_name):
+        self.mouse = mouse
+        self.exp_name = exp_name
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
         self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
         self.visual = Visual(self.exp_name, self.hardware_name)
-        self.data_writer = DataWriter(self.info)
+        self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
 
         self.running = False
 
@@ -65,15 +64,15 @@ class PiTest:
 
             pygame.display.update()
 
-    def test_water(self):
+    def test_water(self, open_time, cool_time):
         self.spout.initialize()
         try:
             for i in range(20):
                 self.spout.water_on()
-                time.sleep(.1)
+                time.sleep(open_time)
                 print('drop delivered')
                 self.spout.water_off()
-                time.sleep(.5)
+                time.sleep(cool_time)
         finally:
             self.spout.shutdown()
             self.running = False
@@ -113,28 +112,31 @@ class PiTest:
             self.visual.shutdown()
 
     def test_lick_with_mouse(self, n_licks, time_limit=300):
+        self.data_writer.test_initialize()
         self.spout.initialize()
-        start = time.time()
+        start_time = time.time()
         lick_counter = 0
         lick_display_counter = 0
+        reward_counter = 0
         try:
-            while start + time_limit > time.time():
+            while start_time + time_limit > time.time():
                 self.spout.water_cleanup()
                 self.running = True
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
                     lick_display_counter += 1
+                    string = f'{reward_counter},{time.time()-start_time:.2f},{lick_change},lick'
+                    self.data_writer.log(string)
                     print(f"start lick {lick_display_counter}")
                 elif lick_change == -1:
-                    print(f"end lick {lick_display_counter} at {time.time()-start:.2f} seconds")
+                    print(f"end lick {lick_display_counter} at {time.time()-start_time:.2f} seconds")
                 if lick_counter >= n_licks:
                     lick_counter = 0
                     self.spout.water_on()
+                    reward_counter += 1
         finally:
             self.spout.shutdown()
             self.running = False
 
-    def test_data_writer(self):
-        self.data_writer.start()
 

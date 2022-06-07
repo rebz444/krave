@@ -6,14 +6,14 @@ from krave import utils
 
 
 class DataWriter:
-    def __init__(self, info):
-        self.mouse = info["mouse"]
-        self.exp_name = info["exp_name"]
-        self.hardware_config_name = info["hardware_config_name"]
+    def __init__(self, exp_name, hardware_name, mouse):
+        self.mouse = mouse
+        self.exp_name = exp_name
+        self.hardware_config_name = hardware_name
         self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
 
-        self.ip = self.hardware_config['desk_ip']
+        self.ip = self.hardware_config['desktop_ip']
         self.user = self.hardware_config['user_name']
         self.password = self.hardware_config['password']
 
@@ -62,27 +62,25 @@ class DataWriter:
         child.close()
         return child.exitstatus
 
-    def start(self):
+    def test_initialize(self):
         info_fields = 'mouse,date,time,exp'
-        # data_fields = 'session_time,task,task_time,trial,trial_time,phase,port,value,key'
+        data_fields = 'session_time, n_reward, lick_time, value, key'
         self.f.write(info_fields + '\n')
         session_info = [self.mouse, self.datetime[0:10], self.datetime[11:19], self.exp_name]
         info_string = ','.join(session_info)
         self.f.write(info_string + '\n')
+        self.f.write('\n'.join(['# Data', data_fields, '']))
+        self.log('nan,nan,nan,nan,start,1,session')
 
-        # for task in task_list:
-        #     info = [self.mouse, self.datetime[0:10], self.datetime[11:19], task.name]
-        #     for port in task.ports:
-        #         info = info + [str(port.dist_info)]
-        #     info_string = ','.join(info)
-        #     self.f.write(info_string + '\n')
-        # self.f.write('\n'.join(['# Data', data_fields, '']))
-        #
-        # self.start_time = time.time()
-        # GPIO.output(self.sync_pins['session'], GPIO.HIGH)
-        # self.log('nan,nan,nan,nan,setup,nan,1,session')
-        # for task in task_list:
-        #     perform(task)
+    # def initialize(self):
+    #     info_fields = 'mouse,date,time,exp'
+    #     data_fields = 'session_time, n_block, block_time, n_trial, trial_time, trial_phase, value, key'
+    #     self.f.write(info_fields + '\n')
+    #     session_info = [self.mouse, self.datetime[0:10], self.datetime[11:19], self.exp_name]
+    #     info_string = ','.join(session_info)
+    #     self.f.write(info_string + '\n')
+    #     self.f.write('\n'.join(['# Data', data_fields, '']))
+    #     self.log('nan,nan,nan,nan,start,1,session')
 
     def log(self, string):
         session_time = time.time()

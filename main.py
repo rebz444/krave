@@ -13,9 +13,9 @@ def main(mouse, exp_name, hardware_config_name):
 
 if __name__ == '__main__':
     # PiTest("exp1").test_visual_with_lick(600, 300)
-    # PiTest("exp1").test_lick_with_mouse(5)
-    # PiTest("exp1").test_water()
+    PiTest("RZ002", "exp1").test_lick_with_mouse(5)
+    # PiTest("RZ001", "exp1").test_water(0.03, 0.5)
     # main('RZ001', 'exp1')
-    PiTest("exp1").test_data_writer()
+    # PiTest("RZ001", "exp1").test_data_writer()
 
 
