@@ -19,6 +19,7 @@ class BlockDefault:
             water.consumption()
             water.ITI()
 
+
 class BlockExp2:
     def __init__(self, session_config, block_config):
         self.block_length = session_config["block_length"]

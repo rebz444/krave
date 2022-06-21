@@ -5,6 +5,7 @@
     "password": "shuler",
     "spouts": {
       "1": [19, 6]
-    }
+    },
+    "camera": 17
   }
 }

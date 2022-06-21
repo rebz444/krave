@@ -3,6 +3,7 @@ import time
 from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.pygame_visual import Visual
+from krave.hardware.camera import Camera
 from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
@@ -17,7 +18,8 @@ class PiTest:
         self.hardware_name = self.exp_config['hardware_setup']
         self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
         self.visual = Visual(self.exp_name, self.hardware_name)
-        self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
+        self.camera = Camera(self.exp_name, self.hardware_name)
+        # self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
 
         self.running = False
 
@@ -112,7 +114,7 @@ class PiTest:
             self.visual.shutdown()
 
     def test_lick_with_mouse(self, n_licks, time_limit=300):
-        self.data_writer.test_initialize()
+        self.data_writer.initialize()
         self.spout.initialize()
         start_time = time.time()
         lick_counter = 0
@@ -139,4 +141,5 @@ class PiTest:
             self.spout.shutdown()
             self.running = False
 
-
+    def test_camera(self):
+        pass
