@@ -25,10 +25,6 @@ class Spout:
         GPIO.setup(self.water_pin, GPIO.OUT)
         return time.time()
 
-    # def test_spout(self):
-    #     status = GPIO.input(self.lick_pin)
-    #     print(status)
-
     def lick_status_check(self):
         """register change only when current status is different than all three
         previous status"""

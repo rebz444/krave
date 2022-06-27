@@ -18,8 +18,8 @@ class PiTest:
         self.hardware_name = self.exp_config['hardware_setup']
         self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
         self.visual = Visual(self.exp_name, self.hardware_name)
-        self.camera = Camera(self.exp_name, self.hardware_name)
-        # self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
+        self.camera = Camera(self.exp_name, self.hardware_name, self.mouse)
+        self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
 
         self.running = False
 
@@ -142,4 +142,11 @@ class PiTest:
             self.running = False
 
     def test_camera(self):
-        pass
+        self.camera.initialize()
+        self.camera.record_test()
+        self.camera.shut_down()
+
+    def all_sys_shutdown(self):
+        self.spout.shutdown()
+        self.camera.shut_down()
+        self.visual.shutdown()
