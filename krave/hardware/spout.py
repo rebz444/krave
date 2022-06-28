@@ -23,6 +23,7 @@ class Spout:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.lick_pin, GPIO.IN)
         GPIO.setup(self.water_pin, GPIO.OUT)
+        GPIO.output(self.water_pin, GPIO.LOW)
         return time.time()
 
     def lick_status_check(self):

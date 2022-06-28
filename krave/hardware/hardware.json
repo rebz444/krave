@@ -6,6 +6,11 @@
     "spouts": {
       "1": [19, 6]
     },
-    "camera": 17
+    "camera": 17,
+    "exposure_time": 1265,
+    "frame_width": 576,
+    "frame_height": 600,
+    "OffsetX": 416,
+    "OffsetY": 440
   }
 }

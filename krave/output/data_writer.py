@@ -23,6 +23,7 @@ class DataWriter:
         self.ssh_path = 'PycharmProjects/behavior_code/data/' + self.mouse  # Change to data save location on the pc
         self.data_send_path = 'C:/Users/' + self.user + '/' + self.ssh_path + '/'  # Path on pc\
         self.f = None
+        # self.f_camera = None
 
     def initialize(self):
         print(os.getcwd())

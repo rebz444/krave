@@ -5,19 +5,28 @@ from krave import utils
 
 # import RPi.GPIO as GPIO
 from pypylon import pylon
+import numpy as np
 import cv2
 
 # GPIO.setmode(GPIO.BCM)
 
 
 class Camera:
-    def __init__(self, exp_name, hardware_config_name, mouse, exposure_time=8170):
+    def __init__(self, exp_name, hardware_config_name, mouse):
         self.mouse = mouse
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
-        self.exposure_time = exposure_time
+
         self.camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
-        self.data_write_path = '/data/' + self.mouse
+        self.exposure_time = self.hardware_config["exposure_time"]
+        self.frame_width = self.hardware_config["frame_width"]
+        self.frame_height = self.hardware_config["frame_height"]
+        self.OffsetX = self.hardware_config["OffsetX"]
+        self.OffsetY = self.hardware_config["OffsetY"]
+
+        self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
+        self.filename = "camera_data_" + self.datetime + ".txt"
+        self.data_write_path = '/camera_data/' + self.mouse
         self.start_time = 0
         self.frame_count = 0
 
@@ -30,9 +39,18 @@ class Camera:
         self.camera.Open()
         self.camera.UserSetSelector = "Default"
         self.camera.ExposureTime.SetValue(self.exposure_time)
-        print(f'exposure time: {self.exposure_time}')
+        self.camera.Width = self.frame_width
+        self.camera.Height = self.frame_height
+        self.camera.OffsetX = self.OffsetX
+        self.camera.OffsetY = self.OffsetY
 
-    def record_test(self):
+        print(f'exposure time: {self.exposure_time}')
+        print(f'frame width: {self.frame_width}')
+        print(f'frame height: {self.frame_height}')
+        print(f'OffsetX: {self.OffsetX}')
+        print(f'OffsetY: {self.OffsetY}')
+
+    def record_test(self, frames):
         print(os.getcwd())
         os.system('sudo -u pi mkdir -p ' + os.getcwd() + self.data_write_path)  # make dir for data write path
         os.chdir(os.getcwd() + self.data_write_path)
@@ -48,9 +66,10 @@ class Camera:
                 t.append(grab.TimeStamp)
                 img = grab.GetArray()
                 cv2.imwrite(f'test_{self.frame_count}.jpeg', img)
-            if self.frame_count == 1000:
+            if self.frame_count == frames:
                 break
         print(f'Acquired {self.frame_count} frames in {time.time() - self.start_time:.0f} seconds')
+        np.savetxt(self.filename, t, delimiter=',')
         return t
 
     def shut_down(self):
@@ -68,7 +87,7 @@ class Camera:
 
 
 if __name__ == '__main__':
-    camera = Camera('exp1', 'setup1')
+    camera = Camera('exp1', 'setup1', 'RZ001')
     camera.initialize()
-    camera.record_test()
+    camera.record_test(100)
     camera.shut_down()
