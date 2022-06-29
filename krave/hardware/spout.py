@@ -57,6 +57,7 @@ class Spout:
             return duration
 
     def shutdown(self):
+        self.water_off()
         GPIO.cleanup()
         print("GPIO cleaned up")
         return time.time()

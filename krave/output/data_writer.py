@@ -39,7 +39,7 @@ class DataWriter:
         info_string = ','.join(session_info)
         self.f.write(info_string + '\n')
         self.f.write('\n'.join(['# Data', data_fields, '']))
-        self.log('nan,nan,nan,nan,start,1,session')
+        self.log('nan,nan,1,session')
 
     def ssh(self, cmd, timeout=30, bg_run=False):
         """SSH'es to a host using the supplied credentials and executes a command.

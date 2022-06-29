@@ -1,4 +1,5 @@
 import time
+import os
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -123,12 +124,17 @@ class PiTest:
         try:
             while start_time + time_limit > time.time():
                 self.spout.water_cleanup()
+                img_time = self.camera.check_frame(start_time)
+                if img_time:
+                    string = f'{reward_counter},{img_time},{1},camera'
+                    self.data_writer.log(string)
+                    print(f"took picture at {img_time:.2f} seconds")
                 self.running = True
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
                     lick_display_counter += 1
-                    string = f'{reward_counter},{time.time()-start_time:.2f},{lick_change},lick'
+                    string = f'{reward_counter},{time.time()-start_time},{lick_change},lick'
                     self.data_writer.log(string)
                     print(f"start lick {lick_display_counter}")
                 elif lick_change == -1:
@@ -139,43 +145,12 @@ class PiTest:
                     reward_counter += 1
         finally:
             self.spout.shutdown()
+            self.camera.shutdown()
             self.running = False
 
     def test_camera(self):
         self.camera.initialize()
-        self.camera.record_test()
-        self.camera.shut_down()
+        self.camera.record_1(100)
+        self.camera.shutdown_1()
 
-    # def lick_detection(self):
-    #     self.data_writer.initialize()
-    #     self.spout.initialize()
-    #     self.camera.initialize()
-    #     start_time = time.time()
-    #     lick_counter = 0
-    #     lick_display_counter = 0
-    #     reward_counter = 0
-    #     try:
-    #         while start_time + time_limit > time.time():
-    #             self.spout.water_cleanup()
-    #             self.running = True
-    #             lick_change = self.spout.lick_status_check()
-    #             if lick_change == 1:
-    #                 lick_counter += 1
-    #                 lick_display_counter += 1
-    #                 string = f'{reward_counter},{time.time() - start_time:.2f},{lick_change},lick'
-    #                 self.data_writer.log(string)
-    #                 print(f"start lick {lick_display_counter}")
-    #             elif lick_change == -1:
-    #                 print(f"end lick {lick_display_counter} at {time.time() - start_time:.2f} seconds")
-    #             if lick_counter >= n_licks:
-    #                 lick_counter = 0
-    #                 self.spout.water_on()
-    #                 reward_counter += 1
-    #     finally:
-    #         self.spout.shutdown()
-    #         self.running = False
 
-    def all_sys_shutdown(self):
-        self.spout.shutdown()
-        self.camera.shut_down()
-        self.visual.shutdown()
