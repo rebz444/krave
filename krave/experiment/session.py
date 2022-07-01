@@ -4,7 +4,7 @@ import time
 from krave import utils
 from krave.output.data_writer import DataWriter
 from krave.experiment.block import BlockDefault, BlockExp2
-from krave.hardware.pygame_visual import Visual
+from krave.hardware.visual import Visual
 from krave.hardware.spout import Spout
 
 

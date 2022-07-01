@@ -1,14 +1,30 @@
 import time
 import os
+import glob
 
 from krave import utils
 from krave.hardware.spout import Spout
-from krave.hardware.pygame_visual import Visual
+from krave.hardware.visual import Visual
 from krave.hardware.camera import Camera
 from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
 import pygame
+import cv2
+import numpy as np
+
+
+def convert_to_video():
+    img_array = []
+    for filename in glob.glob('/home/pi/Documents/krave/data/RZ002_2002-06-30_14-17-09*.jpeg'):
+        img = cv2.imread(filename)
+        height, width, layers = img.shape
+        size = (width, height)
+        img_array.append(img)
+    out = cv2.VideoWriter('project.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+    for i in range(len(img_array)):
+        out.write(img_array[i])
+    out.release()
 
 
 class PiTest:
@@ -114,9 +130,10 @@ class PiTest:
             print("GPIO cleaned up")
             self.visual.shutdown()
 
-    def test_lick_with_mouse(self, n_licks, time_limit=300):
+    def lick_validation(self, n_licks, time_limit=500):
         self.data_writer.initialize()
         self.spout.initialize()
+        self.camera.initialize()
         start_time = time.time()
         lick_counter = 0
         lick_display_counter = 0
@@ -128,7 +145,6 @@ class PiTest:
                 if img_time:
                     string = f'{reward_counter},{img_time},{1},camera'
                     self.data_writer.log(string)
-                    print(f"took picture at {img_time:.2f} seconds")
                 self.running = True
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
@@ -146,11 +162,15 @@ class PiTest:
         finally:
             self.spout.shutdown()
             self.camera.shutdown()
+            self.data_writer.end()
             self.running = False
 
     def test_camera(self):
         self.camera.initialize()
         self.camera.record_1(100)
         self.camera.shutdown_1()
+
+    def test_send_files(self):
+        self.data_writer.scp()
 
 

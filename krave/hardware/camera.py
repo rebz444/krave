@@ -53,18 +53,40 @@ class Camera:
         self.camera.Height = self.frame_height
         self.camera.OffsetX = self.OffsetX
         self.camera.OffsetY = self.OffsetY
+        self.camera.StartGrabbing(pylon.GrabStrategy_OneByOne)
 
+    def check_frame(self, start_time):
+        self.current_time = time.time() - start_time
+        if self.current_time > self.frame_count * self.time_btw_frame:
+            grab = self.camera.RetrieveResult(100, pylon.TimeoutHandling_ThrowException)
+            if grab and grab.GrabSucceeded():
+                self.images.append(grab.Array)
+                # cv2.imwrite(f'img_{self.frame_count}.jpeg', grab.GetArray())
+                grab.Release()
+                self.frame_count += 1
+                return self.current_time
+            else:
+                return None
+        else:
+            return None
+
+    def shutdown(self):
+        self.camera.StopGrabbing()
+        for i, img in enumerate(self.images):
+            cv2.imwrite(f'img_{i}.jpeg', img)
+        self.camera.Close()
+
+    def record_2(self, time_limit):
         print(os.getcwd())
         os.system('sudo -u pi mkdir -p ' + os.getcwd() + self.data_write_path)  # make dir for data write path
         os.chdir(os.getcwd() + self.data_write_path)
 
-    def record_2(self, time_limit):
-        num_frames = int(time_limit*self.frame_rate)
+        num_frames = int(time_limit * self.frame_rate)
         self.camera.StartGrabbing(pylon.GrabStrategy_OneByOne)
         self.start_time = time.time()
         while self.camera.IsGrabbing():
             self.current_time = time.time() - self.start_time
-            if self.current_time > self.frame_count*self.time_btw_frame:
+            if self.current_time > self.frame_count * self.time_btw_frame:
                 self.frame_count += 1
                 print(self.current_time)
                 grab = self.camera.RetrieveResult(100, pylon.TimeoutHandling_ThrowException)
@@ -74,24 +96,6 @@ class Camera:
             if self.frame_count >= num_frames:
                 self.camera.StopGrabbing()
 
-    def check_frame(self, start_time):
-        self.current_time = time.time() - start_time
-        if self.current_time > self.frame_count * self.time_btw_frame:
-            self.frame_count += 1
-            grab = self.camera.RetrieveResult(100, pylon.TimeoutHandling_ThrowException)
-            if grab and grab.GrabSucceeded():
-                self.images.append(grab.GetArray())
-                return self.current_time
-            else:
-                return None
-        else:
-            return None
-
-    def shutdown(self):
-        for i, img in enumerate(self.images):
-            cv2.imwrite(f'img_{i}.jpeg', img)
-        self.camera.Close()
-
     def shutdown_2(self):
         for i, img in enumerate(self.images):
             cv2.imwrite(f'img_{i}.jpeg', img)
@@ -99,16 +103,12 @@ class Camera:
         self.camera.Close()
 
     def record_1(self, frames):
-        tic = time_elapsed()
         self.camera.StartGrabbing(pylon.GrabStrategy_OneByOne)
-        tic = time_elapsed(tic)
         self.frame_count = 0
         t = []
         self.start_time = time.time()
         while self.camera.IsGrabbing():
-            tic = time_elapsed(tic)
             grab = self.camera.RetrieveResult(100, pylon.TimeoutHandling_ThrowException)
-            tic = time_elapsed(tic)
             if grab and grab.GrabSucceeded():
                 self.frame_count += 1
                 t.append(grab.TimeStamp)
@@ -127,5 +127,5 @@ class Camera:
 if __name__ == '__main__':
     camera = Camera('exp1', 'setup1', 'RZ001')
     camera.initialize()
-    camera.record_2(2)
-    camera.shutdown_2()
+    camera.take_picture_test()
+    camera.shutdown()

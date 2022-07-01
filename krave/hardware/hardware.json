@@ -7,8 +7,8 @@
       "1": [19, 6]
     },
     "camera": 17,
-    "frame_rate": 30,
-    "exposure_time": 1000,
+    "frame_rate": 60,
+    "exposure_time": 1200,
     "frame_width": 576,
     "frame_height": 600,
     "OffsetX": 832,
