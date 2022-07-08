@@ -20,20 +20,24 @@ class DataWriter:
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
         self.folder_name = self.mouse + '_' + self.datetime
-        self.data_write_path = os.path.join('data', self.folder_name)  # path on pi
+        self.data_write_path = os.path.join('/media', 'pi', 'REBEKAH', self.folder_name)
+        print(self.data_write_path)
+        # self.data_write_path = os.path.join('data', self.folder_name)  # path on pi
         self.filename = "data_" + self.datetime + ".txt"
         self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
         self.f = None
 
     def initialize(self):
         print(os.getcwd())
-        os.system('sudo -u pi mkdir -p ' + os.path.join(os.getcwd(), self.data_write_path))  # make dir for data write path
-        os.chdir(os.path.join(os.getcwd(), self.data_write_path))  # change dir to data write path
+        os.system('sudo -u pi mkdir -p ' + self.data_write_path)  # make dir for data write path
+        os.chdir(self.data_write_path)
+        # os.system('sudo -u pi mkdir -p ' + os.path.join(os.getcwd(), self.data_write_path))  # make dir
+        # os.chdir(os.path.join(os.getcwd(), self.data_write_path))  # change dir to data write path
         os.system('sudo touch ' + self.filename)  # make the file for writing the data
         os.system('sudo chmod o+w ' + self.filename)  # add permission to write in the data file
         self.f = open(self.filename, 'w')  # open the file for writing
         info_fields = 'mouse,date,time,exp'
-        data_fields = 'session_time, n_reward, lick_time, value, key'
+        data_fields = 'session_time,n_reward,lick_time,value,key'
         self.f.write(info_fields + '\n')
         session_info = [self.mouse, self.datetime[0:10], self.datetime[11:19], self.exp_name]
         info_string = ','.join(session_info)
@@ -80,18 +84,20 @@ class DataWriter:
         new_line = str(session_time) + ',' + string + '\n'
         self.f.write(new_line)
 
-    def end(self):
+    def end(self, forward=False):
         self.f.close()
-        os.chdir('..')
-        os.chdir('..')
-        os.system('sudo chmod o-w ' + self.filename)
-        mkdir_command = 'if not exist %s mkdir %s' % (
-            self.data_send_path.replace('/', '\\'), self.data_send_path.replace('/', '\\'))
-        self.ssh(mkdir_command)
+        if forward:
+            os.chdir('..')
+            os.chdir('..')
+            # os.system('sudo chmod o-w ' + self.filename)
+            mkdir_command = 'if not exist %s mkdir %s' % (
+                self.data_send_path.replace('/', '\\'), self.data_send_path.replace('/', '\\'))
+            self.ssh(mkdir_command)
 
-        if not self.scp():
-            print('\nSuccessful file transfer to "%s"\nDeleting local file from pi.' % self.data_send_path)
-            print(os.path.isdir(self.data_write_path))
-            rmtree(self.data_write_path)
+            if not self.scp():
+                print('\nSuccessful file transfer to "%s"\nDeleting local file from pi.' % self.data_send_path)
+                rmtree(self.data_write_path)
+            else:
+                print('connection back to desktop timed out')
         else:
-            print('connection back to desktop timed out')
+            print(f'saved locally at {self.data_write_path}')

@@ -1,6 +1,4 @@
 import time
-import os
-import glob
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -10,21 +8,6 @@ from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
 import pygame
-import cv2
-import numpy as np
-
-
-def convert_to_video():
-    img_array = []
-    for filename in glob.glob('/home/pi/Documents/krave/data/RZ002_2002-06-30_14-17-09*.jpeg'):
-        img = cv2.imread(filename)
-        height, width, layers = img.shape
-        size = (width, height)
-        img_array.append(img)
-    out = cv2.VideoWriter('project.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-    for i in range(len(img_array)):
-        out.write(img_array[i])
-    out.release()
 
 
 class PiTest:
@@ -33,7 +16,7 @@ class PiTest:
         self.exp_name = exp_name
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
-        self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.3)
+        self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.08)
         self.visual = Visual(self.exp_name, self.hardware_name)
         self.camera = Camera(self.exp_name, self.hardware_name, self.mouse)
         self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
@@ -51,7 +34,6 @@ class PiTest:
             start = time.time()
             lick_counter = 0
             while start + time_limit > time.time():
-                # self.spout.test_spout()
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     print(f"start lick {lick_counter}")
@@ -161,13 +143,14 @@ class PiTest:
                     reward_counter += 1
         finally:
             self.spout.shutdown()
-            self.camera.shutdown()
-            self.data_writer.end()
+            folder_name = self.data_writer.folder_name
+            self.camera.shutdown(folder_name)
+            self.data_writer.end()  # sends file to pc and deletes from pi
             self.running = False
 
     def test_camera(self):
         self.camera.initialize()
-        self.camera.record_1(100)
+        self.camera.speed_test(100)
         self.camera.shutdown_1()
 
     def test_send_files(self):
