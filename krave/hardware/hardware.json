@@ -1,8 +1,9 @@
 {
   "setup1": {
-    "desktop_ip": "10.203.24.116",
+    "desktop_ip": "192.168.137.1",
     "user_name": "Rebekah",
     "password": "shuler",
+    "pi_user_name": "rebekahpi",
     "spouts": {
       "1": [19, 6]
     },

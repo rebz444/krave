@@ -1,8 +1,9 @@
-import RPi.GPIO as GPIO
 import time
 import numpy as np
 
 from krave import utils
+
+import RPi.GPIO as GPIO
 
 
 class Spout:
@@ -19,12 +20,10 @@ class Spout:
         self.water_opened_time = None
         self.water_dispensing = False
 
-    def initialize(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.lick_pin, GPIO.IN)
         GPIO.setup(self.water_pin, GPIO.OUT)
         GPIO.output(self.water_pin, GPIO.LOW)
-        return time.time()
 
     def lick_status_check(self):
         """register change only when current status is different than all three
@@ -61,9 +60,4 @@ class Spout:
         GPIO.cleanup()
         print("GPIO cleaned up")
         return time.time()
-
-#     def reward_rate(self):
-#         if self.reward_distribution == "delay1":
-#             self.base_duration = 1
-#             return self.base_duration
 

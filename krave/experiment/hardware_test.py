@@ -2,8 +2,9 @@ import time
 
 from krave import utils
 from krave.hardware.spout import Spout
-from krave.hardware.visual import Visual
-from krave.hardware.camera import Camera
+# from krave.hardware.visual import Visual
+from krave.hardware.camera_trigger import CameraTrigger
+# from krave.hardware.camera import Camera
 from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
@@ -17,9 +18,10 @@ class PiTest:
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
         self.spout = Spout(self.exp_name, self.hardware_name, "1", 0.08)
-        self.visual = Visual(self.exp_name, self.hardware_name)
-        self.camera = Camera(self.exp_name, self.hardware_name, self.mouse)
+        # self.visual = Visual(self.exp_name, self.hardware_name)
+        # self.camera = Camera(self.exp_name, self.hardware_name, self.mouse)
         self.data_writer = DataWriter(self.exp_name, self.hardware_name, self.mouse)
+        self.camera_trigger = CameraTrigger(self.exp_name, self.hardware_name, self.mouse)
 
         self.running = False
 
@@ -28,7 +30,6 @@ class PiTest:
         return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
 
     def test_lick(self):
-        self.spout.initialize()
         try:
             time_limit = 60
             start = time.time()
@@ -59,16 +60,13 @@ class PiTest:
                     if event.key == pygame.K_SPACE:
                         self.visual.cue_off()
                         print("space is released")
-
             if self.visual.cue_displaying:
                 self.visual.cue_on(x, y)
-
             pygame.display.update()
 
-    def test_water(self, open_time, cool_time):
-        self.spout.initialize()
+    def test_water(self, run_time, open_time, cool_time):
         try:
-            for i in range(20):
+            for i in range(run_time):
                 self.spout.water_on()
                 time.sleep(open_time)
                 print('drop delivered')
@@ -79,7 +77,6 @@ class PiTest:
             self.running = False
 
     def test_visual_with_lick(self, x, y):
-        self.spout.initialize()
         self.visual.initialize()
         time_limit = 30
         start = time.time()
@@ -113,20 +110,18 @@ class PiTest:
             self.visual.shutdown()
 
     def lick_validation(self, n_licks, time_limit=500):
-        self.data_writer.initialize()
-        self.spout.initialize()
-        self.camera.initialize()
         start_time = time.time()
         lick_counter = 0
         lick_display_counter = 0
         reward_counter = 0
         try:
             while start_time + time_limit > time.time():
+                self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
-                img_time = self.camera.check_frame(start_time)
-                if img_time:
-                    string = f'{reward_counter},{img_time},{1},camera'
-                    self.data_writer.log(string)
+                # img_time = self.camera.check_frame(start_time)
+                # if img_time:
+                #     string = f'{reward_counter},{img_time},{1},camera'
+                #     self.data_writer.log(string)
                 self.running = True
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
@@ -136,6 +131,8 @@ class PiTest:
                     self.data_writer.log(string)
                     print(f"start lick {lick_display_counter}")
                 elif lick_change == -1:
+                    string = f'{reward_counter},{time.time() - start_time},{lick_change},lick'
+                    self.data_writer.log(string)
                     print(f"end lick {lick_display_counter} at {time.time()-start_time:.2f} seconds")
                 if lick_counter >= n_licks:
                     lick_counter = 0
@@ -143,9 +140,9 @@ class PiTest:
                     reward_counter += 1
         finally:
             self.spout.shutdown()
-            folder_name = self.data_writer.folder_name
-            self.camera.shutdown(folder_name)
-            self.data_writer.end()  # sends file to pc and deletes from pi
+            # folder_name = self.data_writer.folder_name
+            # self.camera.shutdown(folder_name)
+            self.data_writer.end(forward=True)  # sends file to pc and deletes from pi
             self.running = False
 
     def test_camera(self):
@@ -156,4 +153,7 @@ class PiTest:
     def test_send_files(self):
         self.data_writer.scp()
 
+    def reset(self):
+        self.spout.initialize()
+        self.spout.shutdown()
 

@@ -11,7 +11,7 @@ from PIL import Image, ImageTk
 class Visual:
     def __init__(self, exp_name, hardware_config_name):
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
+        self.hardware_config = utils.get_config('krave.hardware', '../hardware/hardware.json')[hardware_config_name]
         self.cue_name = self.exp_config['visual_cue_name']
         self.cue_path = utils.get_path('krave.hardware', self.cue_name)
         self.cue_length = self.exp_config['visual_cue_length']

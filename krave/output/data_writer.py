@@ -17,22 +17,21 @@ class DataWriter:
         self.ip = self.hardware_config['desktop_ip']
         self.user = self.hardware_config['user_name']
         self.password = self.hardware_config['password']
+        self.pi_suer_name = self.hardware_config['pi_user_name']
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
         self.folder_name = self.mouse + '_' + self.datetime
-        self.data_write_path = os.path.join('/media', 'pi', 'REBEKAH', self.folder_name)
-        print(self.data_write_path)
-        # self.data_write_path = os.path.join('data', self.folder_name)  # path on pi
+        # self.data_write_path = os.path.join('/media', 'pi', 'REBEKAH', self.folder_name)  # thumb drive
+        self.data_write_path = os.path.join('/home', 'rebekahpi', 'Documents', 'behavior_data', self.folder_name)  #
+        # path on pi
+        print("path on pi: ", self.data_write_path)
         self.filename = "data_" + self.datetime + ".txt"
         self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
         self.f = None
 
-    def initialize(self):
-        print(os.getcwd())
-        os.system('sudo -u pi mkdir -p ' + self.data_write_path)  # make dir for data write path
+        print("cwd: ", os.getcwd())
+        os.system(f'sudo -u {self.pi_suer_name} mkdir -p ' + self.data_write_path)  # make dir for data write path
         os.chdir(self.data_write_path)
-        # os.system('sudo -u pi mkdir -p ' + os.path.join(os.getcwd(), self.data_write_path))  # make dir
-        # os.chdir(os.path.join(os.getcwd(), self.data_write_path))  # change dir to data write path
         os.system('sudo touch ' + self.filename)  # make the file for writing the data
         os.system('sudo chmod o+w ' + self.filename)  # add permission to write in the data file
         self.f = open(self.filename, 'w')  # open the file for writing
