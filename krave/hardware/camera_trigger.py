@@ -6,10 +6,11 @@ import RPi.GPIO as GPIO
 
 
 class CameraTrigger:
-    def __init__(self, exp_name, hardware_config_name, mouse):
+    def __init__(self, mouse, exp_config):
         self.mouse = mouse
-        self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
+        self.exp_config = exp_config
+        self.hardware_config_name = self.exp_config['hardware_setup']
+        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
 
         self.camera_pin = self.hardware_config['camera']
         GPIO.setmode(GPIO.BCM)
@@ -17,7 +18,7 @@ class CameraTrigger:
 
         self.frame_rate = self.hardware_config["frame_rate"]
         self.frame_interval = 1 / self.frame_rate
-        self.last_frame = time.time()
+        self.last_frame = 0
         self.cam_high = False
 
     def square_wave(self, data_writer):

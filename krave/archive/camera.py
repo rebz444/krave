@@ -21,7 +21,7 @@ class Camera:
     def __init__(self, exp_name, hardware_config_name, mouse):
         self.mouse = mouse
         self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
+        self.hardware_config = utils.get_config('krave.hardware', '../hardware/hardware.json')[hardware_config_name]
 
         self.camera = pylon.InstantCamera(pylon.TlFactory.GetInstance().CreateFirstDevice())
         self.frame_rate = self.hardware_config["frame_rate"]

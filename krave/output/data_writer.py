@@ -7,11 +7,10 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, exp_name, hardware_name, mouse):
+    def __init__(self, mouse, exp_config):
         self.mouse = mouse
-        self.exp_name = exp_name
-        self.hardware_config_name = hardware_name
-        self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
+        self.exp_config = exp_config
+        self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
 
         self.ip = self.hardware_config['desktop_ip']
@@ -21,12 +20,13 @@ class DataWriter:
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
         self.folder_name = self.mouse + '_' + self.datetime
-        # self.data_write_path = os.path.join('/media', 'pi', 'REBEKAH', self.folder_name)  # thumb drive
-        self.data_write_path = os.path.join('/home', 'rebekahpi', 'Documents', 'behavior_data', self.folder_name)  #
+        # self.data_write_path = os.path.join('/media', 'pi', 'rbz_data', self.folder_name)  # thumb drive
+        self.data_write_path = os.path.join('/home', 'rebekahpi', 'Documents', 'behavior_data', self.folder_name)
         # path on pi
         print("path on pi: ", self.data_write_path)
         self.filename = "data_" + self.datetime + ".txt"
-        self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
+        # self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
+        self.data_send_path = os.path.join('D:', 'behavior_data')
         self.f = None
 
         print("cwd: ", os.getcwd())

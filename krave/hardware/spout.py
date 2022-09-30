@@ -7,15 +7,17 @@ import RPi.GPIO as GPIO
 
 
 class Spout:
-    def __init__(self, exp_name, hardware_config_name, spout_name, duration):
-        self.exp_config = utils.get_config('krave.experiment', f'config/{exp_name}.json')
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[hardware_config_name]
+    def __init__(self, mouse, exp_config, spout_name, duration):
+        self.mouse = mouse
+        self.exp_config = exp_config
+        self.hardware_config_name = self.exp_config['hardware_setup']
+        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
+
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
-        self.lick_status = 1
+        self.lick_status = 0
         self.lick_record = np.ones([3])
-        self.reward_distribution = self.exp_config['reward_distribution']
         self.base_duration = duration
         self.water_opened_time = None
         self.water_dispensing = False
