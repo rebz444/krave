@@ -9,10 +9,6 @@
     },
     "camera": 17,
     "frame_rate": 30,
-    "exposure_time": 1200,
-    "frame_width": 288,
-    "frame_height": 300,
-    "OffsetX": 992,
-    "OffsetY": 429
+    "exposure_time": 1200
   }
 }

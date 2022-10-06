@@ -7,7 +7,7 @@ import RPi.GPIO as GPIO
 
 
 class Spout:
-    def __init__(self, mouse, exp_config, spout_name, duration):
+    def __init__(self, mouse, exp_config, spout_name):
         self.mouse = mouse
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
@@ -18,7 +18,7 @@ class Spout:
 
         self.lick_status = 0
         self.lick_record = np.ones([3])
-        self.base_duration = duration
+        self.duration = 0.001
         self.water_opened_time = None
         self.water_dispensing = False
 
@@ -37,21 +37,20 @@ class Spout:
         self.lick_status += change
         return change
 
-    def water_on(self):
+    def water_on(self, reward_size):
         """turn on water, return time turned on"""
         GPIO.output(self.water_pin, GPIO.HIGH)
+        self.duration = reward_size
         self.water_dispensing = True
         self.water_opened_time = time.time()
-        return time.time()
 
     def water_off(self):
         """turn off water, and return time turned off"""
         GPIO.output(self.water_pin, GPIO.LOW)
         self.water_dispensing = False
-        return time.time()
 
     def water_cleanup(self):
-        if self.water_dispensing and self.water_opened_time + self.base_duration < time.time():
+        if self.water_dispensing and self.water_opened_time + self.duration < time.time():
             duration = time.time() - self.water_opened_time
             GPIO.output(self.water_pin, GPIO.LOW)
             self.water_dispensing = False

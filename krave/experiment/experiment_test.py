@@ -6,6 +6,102 @@ from krave.hardware.visual import Visual
 from krave.hardware.camera_trigger import CameraTrigger
 from krave.output.data_writer import DataWriter
 
+import pygame
+
+
+def reward_function(t):
+    return .1
+
+
+class Task:
+    def __init__(self, mouse, exp_name):
+        self.mouse = mouse
+        self.exp_name = exp_name
+        self.exp_config = self.get_config()
+
+        self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
+        self.visual = Visual(self.mouse, self.exp_config)
+        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
+        self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
+
+        self.consumption_time = self.exp_config['consumption_time']
+        self.punishment_time = self.exp_config['punishment_time']
+
+    def get_config(self):
+        """Get experiment config from json"""
+        return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
+
+    def test_task(self, time_limit=100, time_bg=3):
+        self.visual.initialize()
+        self.visual.screen.fill((0, 0, 0))
+        pygame.display.update()
+
+        start = time.time()
+        trial_num = 0
+        state = 'in_background'
+        print(f"start at {start}")
+        lick_counter = 0
+
+        trial_start = start
+        cue_start = None
+        consumption_start = None
+        punishment_start = None
+
+        try:
+            while start + time_limit > time.time():
+                self.spout.water_cleanup()
+
+                lick_change = self.spout.lick_status_check()
+                if lick_change == 1:
+                    lick_counter += 1
+                    print(f"start lick {lick_counter}")
+                    if state == 'waiting_for_lick':
+                        state = 'consuming_reward'
+                        reward_size = reward_function(time.time() - cue_start)
+                        print('reward delivered')
+                        consumption_start = time.time()
+                        self.spout.water_on(reward_size)
+                        self.visual.cue_off()
+                    elif state == 'in_background':
+                        print('early lick, punishment')
+                        state = 'in_punishment'
+                        punishment_start = time.time()
+                elif lick_change == -1:
+                    print(f"end lick {lick_counter} at {time.time() - start:.2f} seconds")
+
+                if state == 'in_background' and time.time() > trial_start + time_bg:
+                    state = 'waiting_for_lick'
+                    self.visual.cue_on()
+                    cue_start = time.time()
+
+                if state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
+                    state = 'in_background'
+                    trial_num += 1
+                    trial_start = time.time()
+                    print(f'trial {trial_num} start at {trial_start:.2f} seconds')
+
+                if state == 'waiting_for_lick' and time.time() > cue_start + 10:
+                    print('no lick, miss trial')
+                    state = 'in_background'
+                    trial_num += 1
+                    trial_start = time.time()
+                    self.visual.cue_off()
+                    print(f'trial {trial_num} start at {trial_start:.2f} seconds')
+
+                if state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
+                    state = 'in_background'
+                    trial_start = time.time()
+                    print('start background time')
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        print('pygame quit')
+                        break
+
+        finally:
+            self.spout.shutdown()
+            self.visual.shutdown()
+
 
 class Session:
     def __init__(self, mouse, exp_name):

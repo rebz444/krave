@@ -7,8 +7,9 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_config):
+    def __init__(self, mouse, exp_name, exp_config):
         self.mouse = mouse
+        self.exp_name = exp_name
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
