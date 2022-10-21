@@ -1,4 +1,6 @@
 import time
+import random
+import numpy as np
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -18,174 +20,137 @@ class Task:
         self.mouse = mouse
         self.exp_name = exp_name
         self.exp_config = self.get_config()
+        self.hardware_name = self.exp_config['hardware_setup']
 
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
 
+        self.time_limit = self.exp_config['time_limit']
+        self.session_length = self.exp_config['session_length']  # number of blocks per session
+        self.block_length_min = self.exp_config['block_length_min']  # min number of trials per block
+        self.block_length_max = self.exp_config['block_length_max']  # max number of trials per block
         self.consumption_time = self.exp_config['consumption_time']
         self.punishment_time = self.exp_config['punishment_time']
+        self.max_wait_time = self.exp_config['max_wait_time']
+
+        self.block_list = np.zeros(self.session_length).tolist()
+        self.block_lengths = np.zeros(self.session_length).tolist()
+
+        self.session_start = None
+        self.block_start = None
+        self.trial_start = None
+        self.block_num = 0
+        self.block_trial_num = 0
+        self.session_trial_num = 0
+        self.block_len = None
+        self.time_bg = None
+        self.state = None
 
     def get_config(self):
         """Get experiment config from json"""
         return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
 
-    def test_task(self, time_limit=100, time_bg=3):
+    def get_block_structure(self):
+        block_types = list(self.exp_config['blocks'].values())
+        block_start = random.choice(block_types)
+        self.block_list[0] = block_start
+        if block_start == block_types[0]:
+            for i in range(self.session_length):
+                if i % 2 == 0:
+                    self.block_list[i] = block_start
+                else:
+                    self.block_list[i] = block_types[1]
+        elif block_start == block_types[1]:
+            for i in range(self.session_length):
+                if i % 2 == 0:
+                    self.block_list[i] = block_start
+                else:
+                    self.block_list[i] = block_types[0]
+        for i in range(self.session_length):
+            self.block_lengths[i] = random.randint(self.block_length_min, self.block_length_max)
+        print(f'length of each block: {self.block_lengths}')
+        print(f'bg time of each block: {self.block_list}')
+        print(f'total {sum(self.block_lengths)} trials')
+
+    def trial_reset(self):
+        self.block_trial_num += 1
+        self.session_trial_num += 1
+        self.trial_start = time.time()
+        self.state = "in_background"
+        print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} starts "
+              f"at {self.trial_start - self.session_start:.2f} seconds")
+
+    def block_reset(self):
+        self.block_len = self.block_lengths[self.block_num]
+        self.time_bg = self.block_list[self.block_num]
+        self.block_num += 1
+        self.block_trial_num = 0
+        self.block_start = time.time()
+        print(f"block {self.block_num} with bg_time {self.time_bg} sec "
+              f"starts at {self.block_start - self.session_start:.2f} seconds")
+
+    def session(self):
+        self.get_block_structure()
         self.visual.initialize()
         self.visual.screen.fill((0, 0, 0))
         pygame.display.update()
 
-        start = time.time()
-        trial_num = 0
-        state = 'in_background'
-        print(f"start at {start}")
+        self.session_start = time.time()
         lick_counter = 0
-
-        trial_start = start
         cue_start = None
         consumption_start = None
         punishment_start = None
 
-        try:
-            while start + time_limit > time.time():
-                self.spout.water_cleanup()
+        self.block_reset()
+        self.trial_reset()
 
+        try:
+            while (self.session_start + self.time_limit > time.time()) \
+                    or (self.session_trial_num <= sum(self.block_lengths)):
+                # self.camera_trigger.square_wave(self.data_writer)
+                self.spout.water_cleanup()
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
-                    print(f"start lick {lick_counter}")
-                    if state == 'waiting_for_lick':
-                        state = 'consuming_reward'
+                    print(f"lick {lick_counter} at {time.time() - self.session_start:.2f} seconds")
+                    if self.state == 'waiting_for_lick':
+                        self.state = 'consuming_reward'
                         reward_size = reward_function(time.time() - cue_start)
                         print('reward delivered')
                         consumption_start = time.time()
                         self.spout.water_on(reward_size)
                         self.visual.cue_off()
-                    elif state == 'in_background':
+                    elif self.state == 'in_background':
                         print('early lick, punishment')
-                        state = 'in_punishment'
+                        self.state = 'in_punishment'
                         punishment_start = time.time()
-                elif lick_change == -1:
-                    print(f"end lick {lick_counter} at {time.time() - start:.2f} seconds")
+                # elif lick_change == -1:
+                #     print(f"end lick {self.lick_counter} at {time.time() - self.session_start:.2f} seconds")
 
-                if state == 'in_background' and time.time() > trial_start + time_bg:
-                    state = 'waiting_for_lick'
+                if self.state == 'in_background' and time.time() > self.trial_start + self.time_bg:
+                    self.state = 'waiting_for_lick'
                     self.visual.cue_on()
                     cue_start = time.time()
-
-                if state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
-                    state = 'in_background'
-                    trial_num += 1
-                    trial_start = time.time()
-                    print(f'trial {trial_num} start at {trial_start:.2f} seconds')
-
-                if state == 'waiting_for_lick' and time.time() > cue_start + 10:
+                if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
+                    self.trial_reset()
+                if self.state == 'waiting_for_lick' and time.time() > cue_start + self.max_wait_time:
                     print('no lick, miss trial')
-                    state = 'in_background'
-                    trial_num += 1
-                    trial_start = time.time()
+                    self.trial_reset()
                     self.visual.cue_off()
-                    print(f'trial {trial_num} start at {trial_start:.2f} seconds')
-
-                if state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
-                    state = 'in_background'
-                    trial_start = time.time()
+                if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
+                    self.state = 'in_background'
+                    self.trial_start = time.time()
                     print('start background time')
+
+                if self.block_trial_num == self.block_len:
+                    self.block_reset()
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         print('pygame quit')
                         break
-
         finally:
-            self.spout.shutdown()
             self.visual.shutdown()
-
-
-class Session:
-    def __init__(self, mouse, exp_name):
-        self.mouse = mouse
-        self.exp_name = exp_name
-        self.exp_config = self.get_config()
-        self.hardware_name = self.exp_config['hardware_setup']
-
-        self.spout = Spout(self.mouse, self.exp_config, spout_name="1", duration=0.08)
-        self.visual = Visual(self.mouse, self.exp_config)
-        self.data_writer = DataWriter(self.mouse, self.exp_config)
-        self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
-
-        self.session_length = self.exp_config['session_length']  # number of blocks per session
-        self.block_length = self.exp_config['block_length']  # number of trials per block
-
-        self.n_block = 0
-        self.session_start_time = None
-        self.running = False
-
-    def get_config(self):
-        """Get experiment config from json"""
-        return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
-
-    def start(self):
-        self.session_start_time = time.time()
-        self.running = True
-
-    def run(self):
-        self.camera_trigger.square_wave(self.data_writer)
-        for n_block in range(self.session_length):
-            if n_block//2 == 0:
-                time_bg = 1
-            else:
-                time_bg = 3
-            block = Block(self.visual, self.spout, self.data_writer, self.block_length, time_bg)
-            block.run()
-            self.n_block += 1
-
-    def end(self):
-        self.running = False
-        self.spout.shutdown()
-        self.visual.shutdown()
-        self.data_writer.end()
-
-
-class Block:
-    def __init__(self, visual, spout, data_writer, block_length, time_bg):
-        self.visual = visual
-        self.spout = spout
-        self.data_writer = data_writer
-
-        self.block_length = block_length
-        self.time_bg = time_bg
-
-        self.block_start_time = time.time()
-
-    def run(self):
-        for n_trial in range(self.block_length):
-            trial = Trial(self.visual, self.spout, self.data_writer, self.time_bg)
-            trial.run()
-            n_trial += 1
-
-
-class Trial:
-    def __init__(self, visual, spout, data_writer, time_bg):
-        self.visual = visual
-        self.spout = spout
-        self.data_writer = data_writer
-
-        self.trial_start_time = time.time()
-        self.time_bg = time_bg
-        self.trial_start_time = time.time()
-
-    def run(self):
-        while self.trial_start_time + self.time_bg > time.time():
-            self.spout.water_cleanup()
-            lick_change = self.spout.lick_status_check()
-        if self.trial_start_time + self.time_bg - time.time() < 0.01:
-            self.visual.cue_on()
-
-
-
-
-
-
-
+            self.spout.shutdown()

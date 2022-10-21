@@ -1,23 +1,16 @@
 {
+  "time_limit": 360,
+  "session_length": 4,
+  "block_length_min": 5,
+  "block_length_max": 8,
   "consumption_time": 3,
   "punishment_time": 3,
-  "session_length": 4,
-  "block_length": 50,
+  "max_wait_time": 10,
   "visual_cue_name": "cheese.png",
   "visual_display_duration": 1,
-  "visual_cue_location": [600,300],
+  "visual_cue_location": [600, 300],
   "hardware_setup": "setup1",
   "shuffle_blocks": true,
   "auto_end": true,
-  "block_type": "exp1",
-  "blocks": [
-    {
-      "id": "short",
-      "bg_length": 1
-    },
-    {
-      "id": "long",
-      "bg_length": 3
-    }
-  ]
+  "blocks": {"short": 1, "long": 3}
 }

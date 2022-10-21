@@ -22,8 +22,8 @@ class PiTest:
         self.hardware_name = self.exp_config['hardware_setup']
         self.cue_duration = self.exp_config["visual_display_duration"]
 
-        self.spout = Spout(self.mouse, self.exp_config, spout_name="1", duration=0.08)
-        self.visual = Visual(self.mouse, self.exp_config, self.cue_duration)
+        self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
+        self.visual = Visual(self.mouse, self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
 
