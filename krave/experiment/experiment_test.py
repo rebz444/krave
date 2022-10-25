@@ -46,7 +46,7 @@ class Task:
         self.session_trial_num = 0
         self.block_len = None
         self.time_bg = None
-        self.state = None
+        self.state = "in_background"
 
     def get_config(self):
         """Get experiment config from json"""
@@ -74,30 +74,40 @@ class Task:
         print(f'bg time of each block: {self.block_list}')
         print(f'total {sum(self.block_lengths)} trials')
 
-    def trial_reset(self):
-        self.block_trial_num += 1
-        self.session_trial_num += 1
-        self.trial_start = time.time()
-        self.state = "in_background"
-        print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} starts "
-              f"at {self.trial_start - self.session_start:.2f} seconds")
-
     def block_reset(self):
         self.block_len = self.block_lengths[self.block_num]
         self.time_bg = self.block_list[self.block_num]
         self.block_num += 1
         self.block_trial_num = 0
         self.block_start = time.time()
+        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                 f'{self.time_bg},nan,1,block'
+        self.data_writer.log(string)
         print(f"block {self.block_num} with bg_time {self.time_bg} sec "
               f"starts at {self.block_start - self.session_start:.2f} seconds")
 
-    def session(self):
+    def trial_reset(self):
+        self.block_trial_num += 1
+        self.session_trial_num += 1
+        self.trial_start = time.time()
+        self.state = "in_background"
+        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                 f'{self.time_bg},nan,1,trial'
+        self.data_writer.log(string)
+        print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} starts "
+              f"at {self.trial_start - self.session_start:.2f} seconds")
+
+    def session(self, record=False):
         self.get_block_structure()
         self.visual.initialize()
         self.visual.screen.fill((0, 0, 0))
         pygame.display.update()
 
         self.session_start = time.time()
+        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                 f'{self.time_bg},nan,1,session'
+        self.data_writer.log(string)
+
         lick_counter = 0
         cue_start = None
         consumption_start = None
@@ -107,31 +117,49 @@ class Task:
         self.trial_reset()
 
         try:
-            while (self.session_start + self.time_limit > time.time()) \
-                    or (self.session_trial_num <= sum(self.block_lengths)):
-                # self.camera_trigger.square_wave(self.data_writer)
+            while self.session_start + self.time_limit > time.time():
+                if record:
+                    self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
+                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                             f'{self.time_bg},nan,1,lick'
+                    self.data_writer.log(string)
                     print(f"lick {lick_counter} at {time.time() - self.session_start:.2f} seconds")
                     if self.state == 'waiting_for_lick':
                         self.state = 'consuming_reward'
-                        reward_size = reward_function(time.time() - cue_start)
-                        print('reward delivered')
                         consumption_start = time.time()
+                        reward_size = reward_function(time.time() - cue_start)
                         self.spout.water_on(reward_size)
+                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                                 f'{self.time_bg},{reward_size},1,reward'
+                        self.data_writer.log(string)
+                        print('reward delivered')
                         self.visual.cue_off()
+                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                                 f'{self.time_bg},nan,0,visual'
+                        self.data_writer.log(string)
                     elif self.state == 'in_background':
-                        print('early lick, punishment')
                         self.state = 'in_punishment'
                         punishment_start = time.time()
-                # elif lick_change == -1:
-                #     print(f"end lick {self.lick_counter} at {time.time() - self.session_start:.2f} seconds")
+                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                                 f'{self.time_bg},nan,1,punishment'
+                        self.data_writer.log(string)
+                        print('early lick, punishment')
+
+                elif lick_change == -1:
+                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                             f'{self.time_bg},nan,0,lick'
+                    self.data_writer.log(string)
 
                 if self.state == 'in_background' and time.time() > self.trial_start + self.time_bg:
                     self.state = 'waiting_for_lick'
                     self.visual.cue_on()
+                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                             f'{self.time_bg},nan,1,visual'
+                    self.data_writer.log(string)
                     cue_start = time.time()
                 if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
                     self.trial_reset()
@@ -139,12 +167,20 @@ class Task:
                     print('no lick, miss trial')
                     self.trial_reset()
                     self.visual.cue_off()
+                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                             f'{self.time_bg},nan,0,visual'
+                    self.data_writer.log(string)
                 if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
                     self.state = 'in_background'
                     self.trial_start = time.time()
+                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                             f'{self.time_bg},nan,0,punishment'
+                    self.data_writer.log(string)
                     print('start background time')
 
-                if self.block_trial_num == self.block_len:
+                if self.session_trial_num == sum(self.block_lengths):
+                    break
+                elif self.block_trial_num == self.block_len:
                     self.block_reset()
 
                 for event in pygame.event.get():
@@ -152,5 +188,9 @@ class Task:
                         print('pygame quit')
                         break
         finally:
+            string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                     f'{self.time_bg},nan,0,session'
+            self.data_writer.log(string)
             self.visual.shutdown()
             self.spout.shutdown()
+            self.data_writer.end(forward=True)

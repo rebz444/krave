@@ -25,7 +25,7 @@ class DataWriter:
         self.data_write_path = os.path.join('/home', 'rebekahpi', 'Documents', 'behavior_data', self.folder_name)
         # path on pi
         print("path on pi: ", self.data_write_path)
-        self.filename = "data_" + self.datetime + ".txt"
+        self.filename = "data_" + self.mouse + "_" + self.datetime + ".txt"
         # self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
         self.data_send_path = os.path.join('D:', 'behavior_data')
         self.f = None
@@ -37,13 +37,12 @@ class DataWriter:
         os.system('sudo chmod o+w ' + self.filename)  # add permission to write in the data file
         self.f = open(self.filename, 'w')  # open the file for writing
         info_fields = 'mouse,date,time,exp'
-        data_fields = 'session_time,n_reward,lick_time,value,key'
         self.f.write(info_fields + '\n')
         session_info = [self.mouse, self.datetime[0:10], self.datetime[11:19], self.exp_name]
         info_string = ','.join(session_info)
         self.f.write(info_string + '\n')
+        data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'
         self.f.write('\n'.join(['# Data', data_fields, '']))
-        self.log('nan,nan,1,session')
 
     def ssh(self, cmd, timeout=30, bg_run=False):
         """SSH'es to a host using the supplied credentials and executes a command.

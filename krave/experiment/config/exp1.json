@@ -1,8 +1,8 @@
 {
-  "time_limit": 360,
-  "session_length": 4,
-  "block_length_min": 5,
-  "block_length_max": 8,
+  "time_limit": 50,
+  "session_length": 2,
+  "block_length_min": 2,
+  "block_length_max": 5,
   "consumption_time": 3,
   "punishment_time": 3,
   "max_wait_time": 10,
