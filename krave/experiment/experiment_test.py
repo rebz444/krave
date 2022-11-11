@@ -13,16 +13,16 @@ import sympy as sp
 import pygame
 
 
-def calculate_reward(t_w):
-    return 2 * t_w + math.exp(-t_w / 10)
+def calculate_reward(time_wait):
+    return 2 * time_wait * math.exp(-time_wait / 10)
 
 
 def calculate_optimal_wait_time(time_bg):
     t = sp.Symbol('t', real=True)
-    r = 2 * t * sp.exp(-t / 10)/(1 + t)
+    r = 2 * t * sp.exp(-t / 10)/(t + time_bg)
     r_prime = r.diff(t)
-    tw = sp.solve(r_prime, t)
-    for i in tw:
+    time_wait = sp.solve(r_prime, t)
+    for i in time_wait:
         if i > 0:
             return round(i, 2)
 
@@ -264,8 +264,22 @@ class Task:
         finally:
             self.end()
 
-    def test_reward_optimal(self):
-        time_bg = list(self.exp_config['blocks'].values())[0]
-        time_to_wait = calculate_optimal_wait_time(time_bg)
-        print(time_to_wait)
+    def test_reward_optimal(self, time_bg):
+        time_wait = calculate_optimal_wait_time(time_bg)
+        print('optimal wait time is: ', time_wait)
+        reward_size = calculate_reward(time_wait)
+        print('reward size: ', reward_size)
+
+    def calibrate_spout(self):
+        print('calibrating port')
+        open_time = 0.009
+        total_open_time = 0
+        for _ in range(50):
+            self.spout.water_on(open_time)
+            time.sleep(open_time)
+            total_open_time += open_time
+            self.spout.water_off()
+            time.sleep(0.2)
+        self.spout.shutdown()
+        print(f'total water open time {total_open_time}s')
 

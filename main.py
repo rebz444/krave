@@ -9,15 +9,16 @@ def main(mouse, exp_name, hardware_config_name):
 
 if __name__ == '__main__':
     # PiTest("RZ001", "exp1").test_visual_with_lick(600, 300)
-    # PiTest("RZ001", "exp1").test_task()
-    # PiTest("RZ001", "exp1").reset()
     # PiTest("RZ001", "exp1").test_visual_cue(600, 300)
-    # PiTest("RZ001", "exp1").test_water(run_time=20, open_time=0.01, cool_time=0.8)
+    PiTest("RZ001", "exp1").test_water(iterations=50, open_time=0.02, cool_time=0.2)
     # PiTest("RZ002", "exp1").lick_validation(n_licks=10, time_limit=30)
     # Task("RZ001", "exp1").session()
-    Task("RZ001", "exp1").shaping(2)
-    # Task("RZ001", "exp1").test_reward_optimal()
-    # PiTest("RZ001", "exp1").reset()
+    # Task("RZ001", "exp1").shaping(2)
+    # Task("RZ001", "exp1").test_reward_optimal(1)
+    # Task("RZ001", "exp1").test_reward_optimal(3)
+    # Task("RZ001", "exp1").calibrate_spout()
+    # PiTest("RZ001", "exp1").spout_calibration()
+    PiTest("RZ001", "exp1").reset()
 
 
 

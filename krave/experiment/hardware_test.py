@@ -73,9 +73,9 @@ class PiTest:
                 pygame.display.update()
         self.visual.shutdown()
 
-    def test_water(self, run_time, open_time, cool_time):
+    def test_water(self, iterations, open_time, cool_time):
         try:
-            for i in range(run_time):
+            for i in range(iterations):
                 self.spout.water_on(.01)
                 time.sleep(open_time)
                 print('drop delivered')
@@ -147,5 +147,10 @@ class PiTest:
 
     def reset(self):
         self.spout.shutdown()
+
+    def spout_calibration(self):
+        self.spout.calibrate()
+        self.spout.calculate_duration(2.7)
+
 
 

@@ -1,9 +1,10 @@
 import time
-import numpy as np
 
 from krave import utils
 
 import RPi.GPIO as GPIO
+import numpy as np
+from sklearn.linear_model import LinearRegression
 
 
 class Spout:
@@ -16,9 +17,14 @@ class Spout:
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
+        self.calibration_times = [0.01, 0.03, 0.05, 0.08, 0.1, 0.15]
+        self.total_open_times = []
+        self.water_weights = []
+        self.slope = None
+
         self.lick_status = 0
         self.lick_record = np.ones([3])
-        self.duration = 0.001
+        self.duration = 0
         self.water_opened_time = None
         self.water_dispensing = False
 
@@ -37,10 +43,10 @@ class Spout:
         self.lick_status += change
         return change
 
-    def water_on(self, reward_size):
+    def water_on(self, open_time):
         """turn on water, return time turned on"""
         GPIO.output(self.water_pin, GPIO.HIGH)
-        self.duration = reward_size
+        self.duration = open_time
         self.water_dispensing = True
         self.water_opened_time = time.time()
 
@@ -52,8 +58,7 @@ class Spout:
     def water_cleanup(self):
         if self.water_dispensing and self.water_opened_time + self.duration < time.time():
             duration = time.time() - self.water_opened_time
-            GPIO.output(self.water_pin, GPIO.LOW)
-            self.water_dispensing = False
+            self.water_off()
             return duration
 
     def shutdown(self):
@@ -62,3 +67,36 @@ class Spout:
         print("GPIO cleaned up")
         return time.time()
 
+    def calibrate(self):
+        try:
+            print('calibrating port')
+            repeats = 1  # repeating the same weight
+            iteration = 100  # number of times opened of solenoid
+            for t in self.calibration_times:
+                for r in range(repeats):
+                    total_open_time = 0
+                    for _ in range(iteration):
+                        self.water_on(t)
+                        time.sleep(t)
+                        total_open_time += t
+                        self.water_off()
+                        time.sleep(0.2)
+                    self.total_open_times.append(total_open_time)
+                    water_weight = input(f'open time {t} iter {r} water weight: ')
+                    self.water_weights.append(float(water_weight))
+                    input("Press Enter to continue...")
+        finally:
+            self.shutdown()
+            print(f'total open times {self.total_open_times}')
+            print(f'water weights {self.water_weights}')
+
+            self.total_open_times = np.asarray(self.total_open_times).reshape(-1, 1)
+            self.water_weights = np.asarray(self.water_weights)
+            model = LinearRegression(fit_intercept=False).fit(self.total_open_times, self.water_weights)
+            self.slope = model.coef_[0]
+
+    def calculate_duration(self, reward_size_ul):
+        weight_g = reward_size_ul * 0.001
+        duration = weight_g / self.slope
+        print('sol_open_time: ', duration)
+        return duration
