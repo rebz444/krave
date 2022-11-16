@@ -18,9 +18,9 @@ class Spout:
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
         self.calibration_times = [0.01, 0.03, 0.05, 0.08, 0.1, 0.15]
-        self.total_open_times = []
-        self.water_weights = []
-        self.slope = None
+        self.total_open_times = [1, 3, 5, 8, 10, 15]
+        self.water_weights = [0.06, 0.16, 0.21, 0.33, 0.43, 0.58]
+        self.slope = 0.0406
 
         self.lick_status = 0
         self.lick_record = np.ones([3])
@@ -68,6 +68,8 @@ class Spout:
         return time.time()
 
     def calibrate(self):
+        self.total_open_times = []
+        self.water_weights = []
         try:
             print('calibrating port')
             repeats = 1  # repeating the same weight
@@ -94,6 +96,8 @@ class Spout:
             self.water_weights = np.asarray(self.water_weights)
             model = LinearRegression(fit_intercept=False).fit(self.total_open_times, self.water_weights)
             self.slope = model.coef_[0]
+            print('slope: ', self.slope)
+            print('REMEMBER TO ENTER TO SPOUT INITIATION!!!')
 
     def calculate_duration(self, reward_size_ul):
         weight_g = reward_size_ul * 0.001

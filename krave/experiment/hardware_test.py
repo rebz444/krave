@@ -148,7 +148,7 @@ class PiTest:
     def reset(self):
         self.spout.shutdown()
 
-    def spout_calibration(self):
+    def test_spout_calibration(self):
         self.spout.calibrate()
         self.spout.calculate_duration(2.7)
 

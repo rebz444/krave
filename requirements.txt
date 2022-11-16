@@ -1,6 +1,6 @@
 
 pillow~=8.1.2
-numpy~=1.19.5
+numpy~=1.23.4
 pygame~=1.9.6
 pexpect~=4.8.0
 pypylon~=1.8.0
