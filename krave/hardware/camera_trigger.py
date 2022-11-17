@@ -26,12 +26,11 @@ class CameraTrigger:
             GPIO.output(self.camera_pin, GPIO.HIGH)
             self.last_frame = time.time()
             self.cam_high = True
-            string = f'nan,{self.last_frame},{1},camera'
+            string = 'nan,nan,nan,nan,nan,nan,1,camera'
             data_writer.log(string)
         if (time.time() - self.last_frame) > self.frame_interval / 2 and self.cam_high:
             GPIO.output(self.camera_pin, GPIO.LOW)
-            img_off_time = time.time()
             self.cam_high = False
-            string = f'nan,{img_off_time},{0},camera'
+            string = 'nan,nan,nan,nan,nan,nan,0,camera'
             data_writer.log(string)
 

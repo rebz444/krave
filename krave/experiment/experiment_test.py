@@ -16,16 +16,16 @@ import pygame
 def calculate_reward(time_wait):
     """
     reward function
-    :param time_wait:
-    :return reward size in ul:
+    :param time_wait: time spent in waiting period
+    :return: reward size in ul
     """
     return 2 * time_wait * math.exp(-time_wait / 10)
 
 
 def calculate_optimal_wait_time(time_bg):
     """
-    :param time_bg:
-    :return optimal wait time:
+    :param time_bg: bg time length
+    :return: optimal wait time
     """
     t = sp.Symbol('t', real=True)
     r = 2 * t * sp.exp(-t / 10)/(t + time_bg)
@@ -38,6 +38,7 @@ def calculate_optimal_wait_time(time_bg):
 
 class Task:
     def __init__(self, mouse, exp_name, calibrate=False, record=False):
+
         self.mouse = mouse
         self.exp_name = exp_name
         self.exp_config = self.get_config()
@@ -69,6 +70,7 @@ class Task:
         self.block_len = None
         self.time_bg = None  # average bg time of the block
         self.time_bg_drawn = None  # drawn bg time fro exponential distribution
+        self.random_draw = True
         self.state = "in_background"
 
     def get_config(self):
@@ -121,14 +123,20 @@ class Task:
         """
         starts a trial within a block
         determines trial bg time by randomly drawing from a exponential distribution based on avg bg time
+        random draw can be set to false for shaping functions
         """
         self.block_trial_num += 1
         self.session_trial_num += 1
         self.trial_start_time = time.time()
         self.state = "in_background"
-        self.time_bg_drawn = np.random.exponential(self.time_bg)
+
+        if self.random_draw:
+            self.time_bg_drawn = np.random.exponential(self.time_bg)
+        else:
+            self.time_bg_drawn = self.time_bg
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg_drawn},nan,1,trial'
+
         self.data_writer.log(string)
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} starts "
               f"at {self.trial_start_time - self.session_start_time:.2f} seconds")
@@ -141,10 +149,6 @@ class Task:
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,session'
         self.data_writer.log(string)
-
-        self.visual.initialize()
-        self.visual.screen.fill((0, 0, 0))
-        pygame.display.update()
 
     def end(self):
         """
@@ -163,8 +167,8 @@ class Task:
         """
         self.start()
         self.get_session_structure()
-        self.block_start()
-        self.trial_start()
+        self.start_block()
+        self.start_trial()
 
         lick_counter = 0
         total_reward = 0
@@ -179,6 +183,7 @@ class Task:
                 if self.record:
                     self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
+                self.visual.cue_cleanup()
                 lick_change = self.spout.lick_status_check()
 
                 if lick_change == 1:
@@ -198,10 +203,7 @@ class Task:
                                  f'{self.time_bg},{reward_size},1,reward'
                         self.data_writer.log(string)
                         print(f'reward delivered, total reward is {total_reward:.2f} uL')
-                        self.visual.cue_off()
-                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                                 f'{self.time_bg},nan,0,visual'
-                        self.data_writer.log(string)
+
                     elif self.state == 'in_background':
                         # lick during bg time -> punishment
                         self.state = 'in_punishment'
@@ -226,16 +228,12 @@ class Task:
 
                 if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
                     # consumption time passed, bg time starts
-                    self.trial_start()
+                    self.start_trial()
 
                 if self.state == 'waiting_for_lick' and time.time() > cue_start + self.max_wait_time:
                     # no lick, trial ends, new trial starts
                     print('no lick, miss trial')
-                    self.trial_start()
-                    self.visual.cue_off()
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,0,visual'
-                    self.data_writer.log(string)
+                    self.start_trial()
 
                 if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
                     # punishment ends -> bg time
@@ -249,7 +247,7 @@ class Task:
                 if self.session_trial_num == sum(self.block_lengths):
                     break
                 elif self.block_trial_num == self.block_len:
-                    self.block_start()
+                    self.start_block()
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -258,7 +256,14 @@ class Task:
         finally:
             self.end()
 
-    def shaping(self, time_bg):
+    def shaping(self, time_bg, random_draw=False):
+        """
+        shaping with one bg_time
+        :param time_bg:
+        :param random_draw: default to false for shaping
+        """
+        self.time_bg = time_bg
+        self.random_draw = random_draw
         self.start()
         self.trial_start()
 
@@ -267,10 +272,10 @@ class Task:
         cue_start = None
         consumption_start = None
 
-        time_to_wait = calculate_optimal_wait_time(time_bg)
-        reward_size = calculate_reward(time_to_wait)
+        time_wait = calculate_optimal_wait_time(time_bg)
+        reward_size = calculate_reward(time_wait)
         sol_duration = self.spout.calculate_duration(reward_size)
-        print(f'time_bg = {time_bg}s, optimal leave time = {time_to_wait}s, reward = {reward_size}ul')
+        print(f'time_bg = {time_bg}s, optimal leave time = {time_wait}s, reward = {reward_size}ul')
 
         try:
             if self.calibrate:
@@ -279,6 +284,7 @@ class Task:
                 if self.record:
                     self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
+                self.visual.cue_cleanup()
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
@@ -297,7 +303,7 @@ class Task:
                              f'{self.time_bg},nan,1,visual'
                     self.data_writer.log(string)
                     cue_start = time.time()
-                if self.state == 'waiting_time' and time.time() > cue_start + time_to_wait:
+                if self.state == 'waiting_time' and time.time() > cue_start + time_wait:
                     self.state = 'consuming_reward'
                     consumption_start = time.time()
                     total_reward += reward_size
@@ -306,10 +312,6 @@ class Task:
                              f'{self.time_bg},{reward_size},1,reward'
                     self.data_writer.log(string)
                     print(f'reward delivered, total reward is {total_reward:.2f} uL')
-                    self.visual.cue_off()
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,0,visual'
-                    self.data_writer.log(string)
                 if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
                     self.trial_start()
         finally:
