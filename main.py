@@ -11,10 +11,11 @@ if __name__ == '__main__':
     # PiTest("RZ001", "exp1").test_visual_cue(600, 300)
     # PiTest("RZ001", "exp1").test_water(iterations=50, open_time=0.02, cool_time=0.2)
     # PiTest("RZ002", "exp1").lick_validation(n_licks=10, time_limit=30)
+    # PiTest("RZ002", "exp1").test_drawing_bg_time(avg_bg_time=3)
     # Task("RZ001", "exp1").session()
     Task("RZ007", "exp1").shaping(1)
     # PiTest("RZ001", "exp1").spout_calibration()
-    # PiTest("RZ001", "exp1").reset()
+    PiTest("RZ001", "exp1").reset()
 
 
 

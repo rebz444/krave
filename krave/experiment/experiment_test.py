@@ -1,6 +1,7 @@
 import time
 import random
 import math
+import numpy as np
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -8,7 +9,6 @@ from krave.hardware.visual import Visual
 from krave.hardware.camera_trigger import CameraTrigger
 from krave.output.data_writer import DataWriter
 
-import numpy as np
 import sympy as sp
 import pygame
 
@@ -58,9 +58,9 @@ class Task:
         self.punishment_time = self.exp_config['punishment_time']
         self.max_wait_time = self.exp_config['max_wait_time']
 
-        self.session_start = None
-        self.block_start = None
-        self.trial_start = None
+        self.session_start_time = None
+        self.block_start_time = None
+        self.trial_start_time = None
         self.block_num = 0
         self.block_trial_num = 0
         self.session_trial_num = 0
@@ -81,18 +81,18 @@ class Task:
         :return: length of each block, and bg time of each block
         """
         block_types = list(self.exp_config['blocks'].values())
-        block_start = random.choice(block_types)
-        self.block_list[0] = block_start
-        if block_start == block_types[0]:
+        first_block = random.choice(block_types)
+        self.block_list[0] = first_block
+        if first_block == block_types[0]:
             for i in range(self.session_length):
                 if i % 2 == 0:
-                    self.block_list[i] = block_start
+                    self.block_list[i] = first_block
                 else:
                     self.block_list[i] = block_types[1]
-        elif block_start == block_types[1]:
+        elif first_block == block_types[1]:
             for i in range(self.session_length):
                 if i % 2 == 0:
-                    self.block_list[i] = block_start
+                    self.block_list[i] = first_block
                 else:
                     self.block_list[i] = block_types[0]
         for i in range(self.session_length):
@@ -110,12 +110,12 @@ class Task:
         self.time_bg = self.block_list[self.block_num]
         self.block_num += 1
         self.block_trial_num = 0
-        self.block_start = time.time()
+        self.block_start_time = time.time()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,block'
         self.data_writer.log(string)
         print(f"block {self.block_num} with bg_time {self.time_bg} sec "
-              f"starts at {self.block_start - self.session_start:.2f} seconds")
+              f"starts at {self.block_start_time - self.session_start_time:.2f} seconds")
 
     def trial_start(self):
         """
@@ -124,20 +124,20 @@ class Task:
         """
         self.block_trial_num += 1
         self.session_trial_num += 1
-        self.trial_start = time.time()
+        self.trial_start_time = time.time()
         self.state = "in_background"
         self.time_bg_drawn = np.random.exponential(self.time_bg)
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg_drawn},nan,1,trial'
         self.data_writer.log(string)
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} starts "
-              f"at {self.trial_start - self.session_start:.2f} seconds")
+              f"at {self.trial_start_time - self.session_start_time:.2f} seconds")
 
     def start(self):
         """
         starts a session and initiates display to all black
         """
-        self.session_start = time.time()
+        self.session_start_time = time.time()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,session'
         self.data_writer.log(string)
@@ -175,7 +175,7 @@ class Task:
         try:
             if self.calibrate:
                 self.spout.calibrate()
-            while self.session_start + self.time_limit > time.time():
+            while self.session_start_time + self.time_limit > time.time():
                 if self.record:
                     self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
@@ -186,7 +186,7 @@ class Task:
                     string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                              f'{self.time_bg},nan,1,lick'
                     self.data_writer.log(string)
-                    print(f"lick {lick_counter} at {time.time() - self.session_start:.2f} seconds")
+                    print(f"lick {lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
                     if self.state == 'waiting_for_lick':
                         # lick during wait time -> consumption time
                         self.state = 'consuming_reward'
@@ -215,7 +215,7 @@ class Task:
                              f'{self.time_bg},nan,0,lick'
                     self.data_writer.log(string)
 
-                if self.state == 'in_background' and time.time() > self.trial_start + self.time_bg_drawn:
+                if self.state == 'in_background' and time.time() > self.trial_start_time + self.time_bg_drawn:
                     # bg time passed, wait time starts
                     self.state = 'waiting_for_lick'
                     self.visual.cue_on()
@@ -240,7 +240,7 @@ class Task:
                 if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
                     # punishment ends -> bg time
                     self.state = 'in_background'
-                    self.trial_start = time.time()
+                    self.trial_start_time = time.time()
                     string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                              f'{self.time_bg},nan,0,punishment'
                     self.data_writer.log(string)
@@ -275,7 +275,7 @@ class Task:
         try:
             if self.calibrate:
                 self.spout.calibrate()
-            while self.session_start + self.time_limit > time.time():
+            while self.session_start_time + self.time_limit > time.time():
                 if self.record:
                     self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
@@ -290,7 +290,7 @@ class Task:
                              f'{self.time_bg},nan,0,lick'
                     self.data_writer.log(string)
 
-                if self.state == 'in_background' and time.time() > self.trial_start + time_bg:
+                if self.state == 'in_background' and time.time() > self.trial_start_time + time_bg:
                     self.state = 'waiting_time'
                     self.visual.cue_on()
                     string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \

@@ -1,4 +1,6 @@
 import time
+import numpy as np
+import statistics
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -151,6 +153,14 @@ class PiTest:
     def test_spout_calibration(self):
         self.spout.calibrate()
         self.spout.calculate_duration(2.7)
+
+    def test_drawing_bg_time(self, avg_bg_time):
+        bg_times = []
+        for i in range(50):
+            bg_time = np.random.exponential(avg_bg_time)
+            bg_times.append(bg_time)
+        print(bg_times)
+        print(statistics.fmean(bg_times))
 
 
 
