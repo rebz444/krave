@@ -22,7 +22,7 @@ class PiTest:
         self.exp_name = exp_name
         self.exp_config = self.get_config()
         self.hardware_name = self.exp_config['hardware_setup']
-        self.cue_duration = self.exp_config["visual_display_duration"]
+        self.cue_duration = self.exp_config["visual_cue_duration"]
 
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
@@ -151,13 +151,14 @@ class PiTest:
         self.spout.shutdown()
 
     def test_spout_calibration(self):
-        self.spout.calibrate()
-        self.spout.calculate_duration(2.7)
+        # self.spout.calibrate()
+        self.spout.calculate_duration(1)
 
     def test_drawing_bg_time(self, avg_bg_time):
         bg_times = []
+        boundaries = (avg_bg_time - 0.5, avg_bg_time + 0.5)
         for i in range(50):
-            bg_time = np.random.exponential(avg_bg_time)
+            bg_time = np.random.uniform(boundaries[0], boundaries[1])
             bg_times.append(bg_time)
         print(bg_times)
         print(statistics.fmean(bg_times))

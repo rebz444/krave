@@ -14,14 +14,15 @@ class Visual:
 
         self.cue_name = self.exp_config['visual_cue_name']
         self.cue_path = utils.get_path('krave.hardware', f'visual_cue_img/{self.cue_name}')
-        self.cue_duration = self.exp_config['visual_display_duration']
+        self.cue_duration = self.exp_config['visual_cue_duration']
         self.cue_location = tuple(self.exp_config['visual_cue_location'])
 
         self.cue_displaying = False
         self.cue_on_time = None
 
         pygame.init()
-        self.screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+        # self.screen = pygame.display.set_mode((1024, 600), pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.cue = pygame.image.load(self.cue_path)
         self.screen.fill((0, 0, 0))
         pygame.display.update()
@@ -29,7 +30,7 @@ class Visual:
     def cue_on(self):
         self.cue_displaying = True
         self.cue_on_time = time.time()
-        self.screen.fill((0, 0, 255))
+        self.screen.fill((0, 255, 0))
         # self.screen.blit(self.cue, self.cue_location)
         pygame.display.update()
 

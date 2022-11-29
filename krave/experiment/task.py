@@ -2,6 +2,7 @@ import time
 import random
 import math
 import numpy as np
+import statistics
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -36,8 +37,9 @@ def calculate_optimal_wait_time(time_bg):
             return round(i, 2)
 
 
-class Task_test:
+class Task:
     def __init__(self, mouse, exp_name, calibrate=False, record=False):
+        self.session_start_time = time.time()
         self.mouse = mouse
         self.exp_name = exp_name
         self.exp_config = self.get_config()
@@ -47,112 +49,125 @@ class Task_test:
 
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
-        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
+        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
 
         self.time_limit = self.exp_config['time_limit']
-        self.session_length = self.exp_config['session_length']  # number of blocks per session
-        self.block_length_min = self.exp_config['block_length_min']  # min number of trials per block
-        self.block_length_max = self.exp_config['block_length_max']  # max number of trials per block
+        self.total_blocks = self.exp_config['total_blocks']  # total number of blocks per session
+        self.total_trials = self.exp_config['total_trials']  # total number of trials per session
+        self.block_length_range = self.exp_config['block_length_range']
         self.blocks = self.exp_config['blocks']
-        self.bg_time_range = self.exp_config['bg_time_range']
+        self.session_dict = dict.fromkeys(range(self.total_blocks))
+        self.total_trial_num = None
+
+        self.time_bg_range = self.exp_config['time_bg_range']
         self.consumption_time = self.exp_config['consumption_time']
         self.punishment_time = self.exp_config['punishment_time']
         self.max_wait_time = self.exp_config['max_wait_time']
 
-        self.session_start_time = None
         self.block_start_time = None
         self.trial_start_time = None
-        self.block_num = 0
-        self.block_trial_num = 0
-        self.session_trial_num = 0
+        self.block_num = -1
+        self.block_trial_num = -1
+        self.session_trial_num = -1
 
-        self.block_list = np.zeros(self.session_length).tolist()
-        self.block_lengths = np.zeros(self.session_length).tolist()
         self.trial_list = None
         self.block_len = None
         self.time_bg = None  # average bg time of the block
-        self.time_bg_drawn = None  # drawn bg time fro exponential distribution
-        self.random_draw = True
+        self.time_bg_drawn = None  # drawn bg time from uniform distribution
         self.state = "in_background"
+
+        self.session_start_time = time.time()
+        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+                 f'{self.time_bg},nan,1,session'
+        self.data_writer.log(string)
 
     def get_config(self):
         """Get experiment config from json"""
         return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
 
     def get_session_structure(self):
-        """Determines the session structure based on the number of blocks and lengths of avg bg time for each block"""
+        """
+        Determines the session structure based on the number of blocks and lengths of avg bg time for each block
+        makes a dictionary with block num as key and a list of background time for each trial as values
+        time_bg_drawn from a uniform distribution with average of time_bg
+        """
+        trials_per_block = self.total_trials // self.total_blocks
+        trials_per_block_min = trials_per_block - self.block_length_range
+        trials_per_block_max = trials_per_block + self.block_length_range
+        block_lengths = []
+        for i in range(self.total_blocks):
+            block_lengths.append(random.randint(trials_per_block_min, trials_per_block_max))
+        self.total_trial_num = sum(block_lengths)
+
+        block_list = []
         block_types = list(self.blocks.values())
         first_block = random.choice(block_types)
-        self.block_list[0] = first_block
         if first_block == block_types[0]:
-            for i in range(self.session_length):
+            for i in range(self.total_blocks):
                 if i % 2 == 0:
-                    self.block_list[i] = first_block
+                    block_list.append(first_block)
                 else:
-                    self.block_list[i] = block_types[1]
+                    block_list.append(block_types[1])
         elif first_block == block_types[1]:
-            for i in range(self.session_length):
+            for i in range(self.total_blocks):
                 if i % 2 == 0:
-                    self.block_list[i] = first_block
+                    block_list.append(first_block)
                 else:
-                    self.block_list[i] = block_types[0]
-        for i in range(self.session_length):
-            self.block_lengths[i] = random.randint(self.block_length_min, self.block_length_max)
-        print(f'length of each block: {self.block_lengths}')
-        print(f'bg time of each block: {self.block_list}')
-        print(f'total {sum(self.block_lengths)} trials')
+                    block_list.append(block_types[0])
+
+        for i, (l, t) in enumerate(zip(block_lengths, block_list)):
+            low = t - self.time_bg_range
+            high = t + self.time_bg_range
+            self.session_dict[i] = np.random.uniform(low, high, l).tolist()
+        print(f'length of each block: {block_lengths}')
+        print(f'bg time of each block: {block_list}')
+        print(f'total {self.total_trial_num} trials')
+        print(f'session dict: {self.session_dict}')
 
     def start_block(self):
         """
         starts a block within a session
         determines number of trials in the block and avg bg time
         """
-        self.block_len = self.block_lengths[self.block_num]
-        self.time_bg = self.block_list[self.block_num]
-        # self.get_block_structure()
-        self.block_trial_num = 0
+        self.block_num += 1
+        self.block_trial_num = -1
         self.block_start_time = time.time()
+        self.trial_list = self.session_dict[self.block_num]
+        self.block_len = len(self.trial_list)
+        self.time_bg = statistics.fmean(self.trial_list)
 
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,block'
         self.data_writer.log(string)
-        print(f"block {self.block_num} with bg_time {self.time_bg} sec "
+        print(f"block {self.block_num} with bg_time {self.time_bg:.2f} sec "
               f"starts at {self.block_start_time - self.session_start_time:.2f} seconds")
-        self.block_num += 1
 
     def start_trial(self):
         """
         Starts a trial within a block
-        determines trial bg time by randomly drawing from a exponential distribution based on avg bg time
-        random draw can be set to false for shaping functions
         """
         self.block_trial_num += 1
         self.session_trial_num += 1
+        self.time_bg_drawn = self.trial_list[self.block_trial_num]
         self.trial_start_time = time.time()
         self.state = "in_background"
 
-        low = self.time_bg - self.bg_time_range
-        high = self.time_bg + self.bg_time_range
-        if self.random_draw:
-            self.time_bg_drawn = np.random.uniform(low, high)
-        else:
-            self.time_bg_drawn = self.time_bg
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg_drawn},nan,1,trial'
-
         self.data_writer.log(string)
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
               f"{self.time_bg_drawn:.2f}s starts at {self.trial_start_time - self.session_start_time:.2f} seconds")
 
     def start(self):
         """
-        starts a session and initiates display to all black
+        starts a session by getting session structure based on the type of training
+        *************************currently only works for regular behavior session**************************************
         """
         self.session_start_time = time.time()
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,session'
-        self.data_writer.log(string)
+        self.get_session_structure()
+        self.start_block()
+        self.start_trial()
 
     def end(self):
         """
@@ -161,40 +176,117 @@ class Task_test:
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,0,session'
         self.data_writer.log(string)
+
         self.visual.shutdown()
         self.spout.shutdown()
         self.data_writer.end()
 
-    def session(self):
+    # def session(self):
+    #     """
+    #     regular behavior session
+    #     """
+    #     self.start()
+    #     lick_counter = 0
+    #     total_reward = 0
+    #     cue_start = None
+    #     consumption_start = None
+    #     punishment_start = None
+    #
+    #     try:
+    #         if self.calibrate:
+    #             self.spout.calibrate()
+    #         while self.session_trial_num < self.total_trial_num + 1:
+    #             if self.record:
+    #                 self.camera_trigger.square_wave(self.data_writer)
+    #             self.spout.water_cleanup()
+    #             self.visual.cue_cleanup()
+    #             lick_change = self.spout.lick_status_check()
+    #
+    #             if lick_change == 1:
+    #                 lick_counter += 1
+    #                 string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                          f'{self.time_bg},nan,1,lick'
+    #                 self.data_writer.log(string)
+    #                 print(f"lick {lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
+    #                 if self.state == 'waiting_for_lick':
+    #                     # lick during wait time -> consumption time
+    #                     self.state = 'consuming_reward'
+    #                     consumption_start = time.time()
+    #                     reward_size = calculate_reward(time.time() - cue_start)
+    #                     total_reward += reward_size
+    #                     self.spout.water_on(reward_size)
+    #                     string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                              f'{self.time_bg},{reward_size},1,reward'
+    #                     self.data_writer.log(string)
+    #                     print(f'reward delivered, total reward is {total_reward:.2f} uL')
+    #                 elif self.state == 'in_background':
+    #                     # lick during bg time -> punishment
+    #                     self.state = 'in_punishment'
+    #                     punishment_start = time.time()
+    #                     string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                              f'{self.time_bg},nan,1,punishment'
+    #                     self.data_writer.log(string)
+    #                     print('early lick, punishment')
+    #             elif lick_change == -1:
+    #                 string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                          f'{self.time_bg},nan,0,lick'
+    #                 self.data_writer.log(string)
+    #
+    #             if self.state == 'in_background' and time.time() > self.trial_start_time + self.time_bg_drawn:
+    #                 # bg time passed, wait time starts
+    #                 self.state = 'waiting_for_lick'
+    #                 self.visual.cue_on()
+    #                 string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                          f'{self.time_bg},nan,1,visual'
+    #                 self.data_writer.log(string)
+    #                 cue_start = time.time()
+    #
+    #             if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
+    #                 # consumption time passed, bg time starts
+    #                 self.start_trial()
+    #
+    #             if self.state == 'waiting_for_lick' and time.time() > cue_start + self.max_wait_time:
+    #                 # no lick, trial ends, new trial starts
+    #                 print('no lick, miss trial')
+    #                 self.start_trial()
+    #
+    #             if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
+    #                 # punishment ends -> bg time
+    #                 self.state = 'in_background'
+    #                 self.trial_start_time = time.time()
+    #                 string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+    #                          f'{self.time_bg},nan,0,punishment'
+    #                 self.data_writer.log(string)
+    #                 print('start background time')
+    #
+    #             if self.block_trial_num == self.block_len:
+    #                 self.start_block()
+    #
+    #             for event in pygame.event.get():
+    #                 if event.type == pygame.QUIT:
+    #                     print('pygame quit')
+    #                     break
+    #     finally:
+    #         self.end()
+
+    def session_for_debugging(self):
         """
         regular behavior session
         """
         self.start()
-        self.get_session_structure()
-        self.start_block()
-        self.start_trial()
-
         lick_counter = 0
         total_reward = 0
         cue_start = None
         consumption_start = None
-        punishment_start = None
 
         try:
-            if self.calibrate:
-                self.spout.calibrate()
             while self.session_start_time + self.time_limit > time.time():
-                if self.record:
-                    self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
                 self.visual.cue_cleanup()
-                lick_change = self.spout.lick_status_check()
 
+                lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,1,lick'
-                    self.data_writer.log(string)
                     print(f"lick {lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
                     if self.state == 'waiting_for_lick':
                         # lick during wait time -> consumption time
@@ -203,55 +295,32 @@ class Task_test:
                         reward_size = calculate_reward(time.time() - cue_start)
                         total_reward += reward_size
                         self.spout.water_on(reward_size)
-                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                                 f'{self.time_bg},{reward_size},1,reward'
-                        self.data_writer.log(string)
                         print(f'reward delivered, total reward is {total_reward:.2f} uL')
-
-                    elif self.state == 'in_background':
-                        # lick during bg time -> punishment
-                        self.state = 'in_punishment'
-                        punishment_start = time.time()
-                        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                                 f'{self.time_bg},nan,1,punishment'
-                        self.data_writer.log(string)
-                        print('early lick, punishment')
-                elif lick_change == -1:
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,0,lick'
-                    self.data_writer.log(string)
 
                 if self.state == 'in_background' and time.time() > self.trial_start_time + self.time_bg_drawn:
                     # bg time passed, wait time starts
                     self.state = 'waiting_for_lick'
+                    print(self.state)
                     self.visual.cue_on()
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,1,visual'
-                    self.data_writer.log(string)
                     cue_start = time.time()
 
                 if self.state == 'consuming_reward' and time.time() > consumption_start + self.consumption_time:
                     # consumption time passed, bg time starts
-                    self.start_trial()
+                    self.state = 'trial_ends'
 
                 if self.state == 'waiting_for_lick' and time.time() > cue_start + self.max_wait_time:
                     # no lick, trial ends, new trial starts
                     print('no lick, miss trial')
-                    self.start_trial()
+                    self.state = 'trial_ends'
 
-                if self.state == 'in_punishment' and time.time() > punishment_start + self.punishment_time:
-                    # punishment ends -> bg time
-                    self.state = 'in_background'
-                    self.trial_start_time = time.time()
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,0,punishment'
-                    self.data_writer.log(string)
-                    print('start background time')
-
-                if self.session_trial_num == sum(self.block_lengths):
-                    break
-                elif self.block_trial_num == self.block_len:
-                    self.start_block()
+                if self.state == 'trial_ends':
+                    if self.session_trial_num + 1 == self.total_trial_num:
+                        break
+                    elif self.block_trial_num + 1 == self.block_len:
+                        self.start_block()
+                        self.start_trial()
+                    else:
+                        self.start_trial()
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
