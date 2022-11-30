@@ -51,27 +51,22 @@ class PiTest:
             self.spout.shutdown()
 
     def test_visual_cue(self):
-        self.visual.initialize()
         start = time.time()
         time_limit = 20
         while start + time_limit > time.time():
-            self.running = True
-            while self.running:
-                self.visual.screen.fill((0, 0, 0))
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self.running = False
-
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_SPACE:
-                            self.visual.cue_on()
-                            print("space is pressed")
-                    if event.type == pygame.KEYUP:
-                        if event.key == pygame.K_SPACE:
-                            self.visual.cue_off()
-                            print("space is released")
-                # if self.visual.cue_displaying:
-                #     self.visual.cue_on()
+            self.visual.screen.fill((0, 0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print('pygame quit')
+                    break
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.cue_on()
+                        print("space is pressed")
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.cue_off()
+                        print("space is released")
                 pygame.display.update()
         self.visual.shutdown()
 
