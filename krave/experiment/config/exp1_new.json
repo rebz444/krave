@@ -8,6 +8,7 @@
   "consumption_time": 3,
   "punishment_time": 3,
   "max_wait_time": 3.5,
+  "max_reward": 1500,
   "visual_cue_name": "cheese.png",
   "visual_cue_duration": 1,
   "visual_cue_location": [600, 300],

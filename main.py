@@ -17,7 +17,8 @@ if __name__ == '__main__':
     # Task_test("RZ007", "exp1").shaping(1)
     # PiTest("RZ001", "exp1").test_spout_calibration()
     try:
-        Task("RZ001", "exp1_new").test_test()
+        PiTest("RZ001", "exp1").test_spout_calibration()
+        # Task("RZ001", "exp1_new", 'shaping1').shaping()
     finally:
         PiTest("RZ001", "exp1_new").reset()
 

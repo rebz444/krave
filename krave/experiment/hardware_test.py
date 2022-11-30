@@ -1,6 +1,4 @@
 import time
-import numpy as np
-import statistics
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -83,7 +81,6 @@ class PiTest:
             self.running = False
 
     def test_visual_with_lick(self):
-        self.visual.initialize()
         time_limit = 30
         start = time.time()
         lick_counter = 0
@@ -145,18 +142,8 @@ class PiTest:
     def reset(self):
         self.spout.shutdown()
 
-    def test_spout_calibration(self):
-        # self.spout.calibrate()
-        self.spout.calculate_duration(1)
 
-    def test_drawing_bg_time(self, avg_bg_time):
-        bg_times = []
-        boundaries = (avg_bg_time - 0.5, avg_bg_time + 0.5)
-        for i in range(50):
-            bg_time = np.random.uniform(boundaries[0], boundaries[1])
-            bg_times.append(bg_time)
-        print(bg_times)
-        print(statistics.fmean(bg_times))
+
 
 
 

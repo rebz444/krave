@@ -39,14 +39,26 @@ def calculate_optimal_wait_time(time_bg):
 
 
 class Task:
-    def __init__(self, mouse, exp_name, calibrate=False, record=False):
+    def __init__(self, mouse, exp_name, training, calibrate=False, record=False):
         # experiment information
         self.mouse = mouse
         self.exp_name = exp_name
-        self.exp_config = self.get_config()
+        self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
         self.hardware_name = self.exp_config['hardware_setup']
         self.calibrate = calibrate
         self.record = record
+        self.training = training
+        if self.training == 'shaping1':
+            self.punishment = False
+            self.random_draw = False
+        elif self.training == 'shaping2':
+            self.punishment = False
+            self.random_draw = True
+        elif self.training == 'regular':
+            self.punishment = True
+            self.random_draw = True
+        else:
+            print('training type invalid')
 
         # initiate hardware
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
@@ -56,6 +68,7 @@ class Task:
 
         # session structure
         self.time_limit = self.exp_config['time_limit']
+        self.max_reward = self.exp_config['max_reward']
         self.total_blocks = self.exp_config['total_blocks']  # total number of blocks per session
         self.total_trials = self.exp_config['total_trials']  # median for total number of trials per session
         self.block_length_range = self.exp_config['block_length_range']
@@ -84,13 +97,9 @@ class Task:
         self.session_trial_num = -1
         self.time_bg = None  # average bg time of the block
         self.time_bg_drawn = None  # drawn bg time from uniform distribution
-        self.state = "in_background"
+        self.state = states.IN_BACKGROUND
         self.lick_counter = 0
         self.total_reward = 0
-
-    def get_config(self):
-        """get experiment config from json"""
-        return utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
 
     def get_session_structure(self):
         """
@@ -125,17 +134,17 @@ class Task:
         for i, (l, t) in enumerate(zip(block_lengths, block_list)):
             low = t - self.time_bg_range
             high = t + self.time_bg_range
-            self.session_dict[i] = np.random.uniform(low, high, l).tolist()
+            if self.random_draw:
+                self.session_dict[i] = np.random.uniform(low, high, l).tolist()
+            else:
+                self.session_dict[i] = [t] * l
         print(f'length of each block: {block_lengths}')
         print(f'bg time of each block: {block_list}')
         print(f'total {self.total_trial_num} trials')
         print(f'session dict: {self.session_dict}')
 
     def start(self):
-        """
-        starts a session by getting session structure based on the type of training
-        *************************currently only works for regular behavior session**************************************
-        """
+        """starts a session by getting session structure based on the type of training"""
         self.session_start_time = time.time()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,session'
@@ -181,7 +190,7 @@ class Task:
         self.session_trial_num += 1
         self.time_bg_drawn = self.trial_list[self.block_trial_num]
         self.trial_start_time = time.time()
-        self.state = "in_background"
+        self.state = states.IN_BACKGROUND
 
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg_drawn},nan,1,trial'
@@ -191,7 +200,7 @@ class Task:
 
     def end_trial(self):
         """ends a trial"""
-        self.state = "trial_ends"
+        self.state = states.TRIAL_ENDS
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg_drawn},nan,0,trial'
         self.data_writer.log(string)
@@ -212,7 +221,7 @@ class Task:
 
     def start_consumption(self):
         """starts consumption time, delivers reward, logs using data writer"""
-        self.state = 'in_consumption'
+        self.state = states.IN_CONSUMPTION
         self.consumption_start_time = time.time()
         reward_size = calculate_reward(time.time() - self.cue_start_time)
         self.total_reward += reward_size
@@ -224,7 +233,7 @@ class Task:
 
     def start_punishment(self):
         """starts punishment time, logs using data writer, trial does not restart"""
-        self.state = 'in_punishment'
+        self.state = states.IN_PUNISHMENT
         self.punishment_start_time = time.time()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,punishment'
@@ -233,7 +242,7 @@ class Task:
 
     def end_punishment(self):
         """ends punishment time, logs using data writer, enters bg time"""
-        self.state = 'in_background'
+        self.state = states.IN_BACKGROUND
         self.trial_start_time = time.time()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,0,punishment'
@@ -241,18 +250,14 @@ class Task:
         print('start background time')
 
     def start_wait(self):
-        """starts wait time, logs using data writer"""
-        self.state = 'in_wait'
+        """ flash visual cue, starts wait time, logs using data writer"""
+        self.state = states.IN_WAIT
         print(self.state)
         self.visual.cue_on()
         string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
                  f'{self.time_bg},nan,1,visual'
         self.data_writer.log(string)
         self.cue_start_time = time.time()
-
-    def test_test(self):
-        if self.state == 'in_background':
-            print(constants.IN_WAIT)
 
     def session(self):
         """regular behavior session"""
@@ -269,29 +274,32 @@ class Task:
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     self.log_lick()
-                    if self.state == 'in_wait':
+                    if self.state == states.IN_WAIT:
                         self.start_consumption()
-                    elif self.state == 'in_background':
+                    elif self.state == states.IN_BACKGROUND:
                         self.start_punishment()
                 elif lick_change == -1:
                     self.log_lick_ending()
 
-                if self.state == 'in_background' and time.time() > self.trial_start_time + self.time_bg_drawn:
+                if self.state == states.IN_BACKGROUND and time.time() > self.trial_start_time + self.time_bg_drawn:
                     self.start_wait()
 
-                if self.state == 'in_consumption' \
+                if self.state == states.IN_CONSUMPTION \
                         and time.time() > self.consumption_start_time + self.consumption_time:
                     self.end_trial()
 
-                if self.state == 'in_wait' and time.time() > self.cue_start_time + self.max_wait_time:
+                if self.state == states.IN_WAIT and time.time() > self.cue_start_time + self.max_wait_time:
                     print('no lick, miss trial')
                     self.end_trial()
 
-                if self.state == 'in_punishment' and time.time() > self.punishment_start_time + self.punishment_time:
+                if self.state == states.IN_PUNISHMENT \
+                        and time.time() > self.punishment_start_time + self.punishment_time:
                     self.end_punishment()
 
-                if self.state == 'trial_ends':
+                if self.state == states.TRIAL_ENDS:
                     if self.session_trial_num + 1 == self.total_trial_num:
+                        break
+                    elif self.total_reward >= self.max_reward:
                         break
                     elif self.block_trial_num + 1 == self.block_len:
                         self.start_block()
@@ -305,22 +313,8 @@ class Task:
         finally:
             self.end()
 
-    def shaping(self, time_bg, random_draw=False):
-        """
-        shaping with one bg_time
-        :param time_bg:
-        :param random_draw: default to false for shaping
-        """
-        self.time_bg = time_bg
-        self.random_draw = random_draw
+    def shaping(self):
         self.start()
-        self.start_trial()
-
-        time_wait = calculate_optimal_wait_time(time_bg)
-        reward_size = calculate_reward(time_wait)
-        sol_duration = self.spout.calculate_duration(reward_size)
-        print(f'time_bg = {time_bg}s, optimal leave time = {time_wait}s, reward = {reward_size}ul')
-
         try:
             if self.calibrate:
                 self.spout.calibrate()
@@ -329,34 +323,37 @@ class Task:
                     self.camera_trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
                 self.visual.cue_cleanup()
+
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
-                    self.lick_counter += 1
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,1,lick'
-                    self.data_writer.log(string)
+                    self.log_lick()
                 elif lick_change == -1:
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,0,lick'
-                    self.data_writer.log(string)
+                    self.log_lick_ending()
 
-                if self.state == 'in_background' and time.time() > self.trial_start_time + time_bg:
-                    self.state = 'waiting_time'
-                    self.visual.cue_on()
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},nan,1,visual'
-                    self.data_writer.log(string)
-                    self.cue_start_time = time.time()
-                if self.state == 'waiting_time' and time.time() > self.cue_start_time + time_wait:
-                    self.state = 'in_consumption'
-                    self.consumption_start_time = time.time()
-                    self.total_reward += reward_size
-                    self.spout.water_on(sol_duration)
-                    string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                             f'{self.time_bg},{reward_size},1,reward'
-                    self.data_writer.log(string)
-                    print(f'reward delivered, total reward is {self.total_reward:.2f} uL')
-                if self.state == 'in_consumption' and time.time() > self.consumption_start_time + self.consumption_time:
-                    self.start_trial()
+                if self.state == states.IN_BACKGROUND and time.time() > self.trial_start_time + self.time_bg_drawn:
+                    time_to_wait = calculate_optimal_wait_time(self.time_bg_drawn)
+                    self.start_wait()
+
+                if self.state == states.IN_WAIT and time.time() > self.cue_start_time + time_to_wait:
+                    self.start_consumption()
+
+                if self.state == states.IN_CONSUMPTION \
+                        and time.time() > self.consumption_start_time + self.consumption_time:
+                    self.end_trial()
+
+                if self.state == states.TRIAL_ENDS:
+                    if self.session_trial_num + 1 == self.total_trial_num:
+                        break
+                    elif self.total_reward >= 1500:
+                        break
+                    elif self.block_trial_num + 1 == self.block_len:
+                        self.start_block()
+                    else:
+                        self.start_trial()
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        print('pygame quit')
+                        break
         finally:
             self.end()

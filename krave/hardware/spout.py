@@ -13,14 +13,15 @@ class Spout:
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
-
+        self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
-        self.calibration_times = [0.01, 0.03, 0.05, 0.08, 0.1, 0.15]
-        self.total_open_times = [1, 3, 5, 8, 10, 15]
-        self.water_weights = [0.06, 0.16, 0.21, 0.33, 0.43, 0.58]
-        self.slope = 0.0406
+        # calibration info, should be updated everytime calibration is run
+        self.calibration_times = self.calibration_config['calibration_times']
+        self.total_open_times = self.calibration_config['total_open_times']
+        self.water_weights = self.calibration_config['water_weights']
+        self.slope = self.calibration_config['slope']
 
         self.lick_status = 0
         self.lick_record = np.ones([3])
@@ -34,9 +35,7 @@ class Spout:
         GPIO.output(self.water_pin, GPIO.LOW)
 
     def lick_status_check(self):
-        """
-        register change only when current status is different than all three previous status
-        """
+        """register change only when current status is different than all three previous status"""
         self.lick_record = np.roll(self.lick_record, 1)
         self.lick_record[0] = GPIO.input(self.lick_pin)
         change_bool = np.all(self.lick_record != self.lick_status)
@@ -44,9 +43,10 @@ class Spout:
         self.lick_status += change
         return change
 
-    def water_on(self, open_time):
+    def water_on(self, reward_size):
+        """turns on water, resets duration"""
         GPIO.output(self.water_pin, GPIO.HIGH)
-        self.duration = open_time
+        self.duration = self.calculate_duration(reward_size)
         self.water_dispensing = True
         self.water_opened_time = time.time()
 
@@ -64,15 +64,13 @@ class Spout:
         print("GPIO cleaned up")
 
     def get_calibration_curve(self):
-        """
-        calculates the relationship between solenoid open time and amount of water delivered
-        """
+        """calculates the relationship between solenoid open time and amount of water delivered"""
         self.total_open_times = np.asarray(self.total_open_times).reshape(-1, 1)
         self.water_weights = np.asarray(self.water_weights)
         model = LinearRegression(fit_intercept=False).fit(self.total_open_times, self.water_weights)
         self.slope = model.coef_[0]
         print('slope: ', self.slope)
-        print('REMEMBER TO ENTER TO SPOUT INITIATION!!!')
+        print('REMEMBER TO UPDATE TO spout_calibration.json!!!')
 
     def calibrate(self):
         """
@@ -112,5 +110,5 @@ class Spout:
         """
         weight_g = reward_size_ul * 0.001
         self.duration = weight_g / self.slope
-        print('sol_open_time: ', self.duration)
+        print('sol_open_time: ', round(self.duration, 2))
         return self.duration
