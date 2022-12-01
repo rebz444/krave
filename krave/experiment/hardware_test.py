@@ -22,9 +22,9 @@ class PiTest:
         self.hardware_name = self.exp_config['hardware_setup']
         self.cue_duration = self.exp_config["visual_cue_duration"]
 
+        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
-        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
 
         self.running = False
@@ -136,7 +136,7 @@ class PiTest:
                     reward_counter += 1
         finally:
             self.spout.shutdown()
-            self.data_writer.end(forward=True)  # sends file to pc and deletes from pi
+            self.data_writer.end()  # sends file to pc and deletes from pi
             self.running = False
 
     def reset(self):

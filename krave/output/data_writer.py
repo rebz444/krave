@@ -7,12 +7,13 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_name, exp_config):
+    def __init__(self, mouse, exp_name, exp_config, forward_file):
         self.mouse = mouse
         self.exp_name = exp_name
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
+        self.forward_file = forward_file
 
         self.ip = self.hardware_config['desktop_ip']
         self.user = self.hardware_config['user_name']
@@ -20,7 +21,7 @@ class DataWriter:
         self.pi_suer_name = self.hardware_config['pi_user_name']
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
-        self.folder_name = self.mouse + '_' + self.datetime
+        self.folder_name = self.datetime + '_' + self.mouse
         # self.data_write_path = os.path.join('/media', 'pi', 'rbz_data', self.folder_name)  # thumb drive
         self.data_write_path = os.path.join('/home', 'rebekahpi', 'Documents', 'behavior_data', self.folder_name)
         # path on pi
@@ -83,9 +84,9 @@ class DataWriter:
         new_line = str(session_time) + ',' + string + '\n'
         self.f.write(new_line)
 
-    def end(self, forward=False):
+    def end(self):
         self.f.close()
-        if forward:
+        if self.forward_file:
             os.chdir('..')
             os.chdir('..')
             # os.system('sudo chmod o-w ' + self.filename)
