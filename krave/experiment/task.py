@@ -91,10 +91,11 @@ class Task:
         trials_per_block_min = trials_per_block - self.block_length_range
         trials_per_block_max = trials_per_block + self.block_length_range
         block_lengths = []
+
+        # make two block types alternate
         for i in range(self.total_blocks):
             block_lengths.append(random.randint(trials_per_block_min, trials_per_block_max))
         self.total_trial_num = sum(block_lengths)
-
         block_list = []
         block_types = list(self.blocks.values())
         first_block = random.choice(block_types)
@@ -132,6 +133,11 @@ class Task:
         print(f'session dict: {self.session_dict}')
 
     def get_wait_time_optimal(self):
+        """
+        makes a dictionary with block num as key and a list of optimal wait time for each trial as values
+        runs for shaping tasks when reward delivery is not lick triggered
+        this function is a bit slow, so must be run before session starts
+        """
         count = 0
         for blk in self.session_dict:
             optimal_list = []
@@ -313,6 +319,7 @@ class Task:
                         and time.time() > self.punishment_start_time + self.punishment_time:
                     self.end_punishment()
 
+                # session ends if total num of trials is reached, or if reward received is larger than 1.5 ml
                 if self.state == states.TRIAL_ENDS:
                     if self.session_trial_num + 1 == self.total_trial_num:
                         break
