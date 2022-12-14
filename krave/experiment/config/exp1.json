@@ -1,7 +1,7 @@
 {
   "time_limit": 100,
-  "total_blocks": 2,
-  "total_trials_median": 6,
+  "total_blocks": 5,
+  "total_trials_median": 1000,
   "block_length_range": 2,
   "blocks": {"short": 1, "long": 3},
   "time_bg_range": 0.5,

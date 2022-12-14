@@ -10,10 +10,6 @@ import RPi.GPIO as GPIO
 import pygame
 
 
-def reward_function(t):
-    return .1
-
-
 class PiTest:
     def __init__(self, mouse, exp_name):
         self.mouse = mouse

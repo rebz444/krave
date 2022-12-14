@@ -6,7 +6,7 @@ import statistics
 from krave import utils
 from krave.experiment import states
 from krave.hardware.spout import Spout
-from krave.hardware.visual import Visual
+# from krave.hardware.visual import Visual
 from krave.hardware.camera_trigger import CameraTrigger
 from krave.output.data_writer import DataWriter
 
@@ -39,7 +39,7 @@ class Task:
 
         # initiate hardware
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
-        self.visual = Visual(self.mouse, self.exp_config)
+        # self.visual = Visual(self.mouse, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, self.forward_file)
 
@@ -118,6 +118,7 @@ class Task:
             high = t + self.time_bg_range
             if self.random_draw:
                 drawn_times = np.random.uniform(low, high, l).tolist()
+                drawn_times = [round(item, 1) for item in drawn_times]
                 self.session_dict[i] = drawn_times
                 count += len(drawn_times)
             else:
@@ -138,16 +139,20 @@ class Task:
         runs for shaping tasks when reward delivery is not lick triggered
         this function is a bit slow, so must be run before session starts
         """
-        count = 0
+        count = 0  # used
+        total_list = []  # used to check if there are none values in the dict
         for blk in self.session_dict:
             optimal_list = []
             for trl in self.session_dict[blk]:
-                optimal_list.append(round(utils.calculate_time_wait_optimal(round(trl, 2)), 2))
+                optimal_list.append(utils.calculate_time_wait_optimal(trl))
             count += len(optimal_list)
+            total_list.append(optimal_list)
             self.optimal_dict[blk] = optimal_list
 
         if count != self.total_trial_num:
             raise Exception(f'Missing {self.total_trial_num - count} optimal values!')
+        if None in total_list:
+            raise ValueError('None values in optimal_dict')
 
     def start(self):
         """starts a session by getting session structure based on the type of training"""
