@@ -27,11 +27,9 @@ class DataWriter:
         # path on pi
         print("path on pi: ", self.data_write_path)
         self.filename = "data_" + self.mouse + "_" + self.datetime + ".txt"
-        # self.data_send_path = os.path.join('C:', 'Users', self.user, 'Documents', 'behavior_data')
         self.data_send_path = os.path.join('D:', 'behavior_data')
         self.f = None
 
-        print("cwd: ", os.getcwd())
         os.system(f'sudo -u {self.pi_suer_name} mkdir -p ' + self.data_write_path)  # make dir for data write path
         os.chdir(self.data_write_path)
         os.system('sudo touch ' + self.filename)  # make the file for writing the data

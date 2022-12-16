@@ -6,8 +6,8 @@ import statistics
 from krave import utils
 from krave.experiment import states
 from krave.hardware.spout import Spout
-# from krave.hardware.visual import Visual
-from krave.hardware.camera_trigger import CameraTrigger
+from krave.hardware.visual import Visual
+from krave.hardware.square_wave import SquareWave
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -39,8 +39,8 @@ class Task:
 
         # initiate hardware
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
-        # self.visual = Visual(self.mouse, self.exp_config)
-        self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
+        self.visual = Visual(self.mouse, self.exp_config)
+        self.trigger = SquareWave(self.mouse, self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, self.forward_file)
 
         # session structure
@@ -130,8 +130,7 @@ class Task:
 
         print(f'length of each block: {block_lengths}')
         print(f'bg time of each block: {block_list}')
-        print(f'total {self.total_trial_num} trials')
-        print(f'session dict: {self.session_dict}')
+        print(f'{self.total_trial_num} trials total')
 
     def get_wait_time_optimal(self):
         """
@@ -139,6 +138,7 @@ class Task:
         runs for shaping tasks when reward delivery is not lick triggered
         this function is a bit slow, so must be run before session starts
         """
+        print('Calculating optimal wait times')
         count = 0  # used
         total_list = []  # used to check if there are none values in the dict
         for blk in self.session_dict:
@@ -154,6 +154,9 @@ class Task:
         if None in total_list:
             raise ValueError('None values in optimal_dict')
 
+    def get_string_to_log(self, event):
+        return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},{self.time_bg},' + event
+
     def start(self):
         """starts a session by getting session structure based on the type of training"""
         self.get_session_structure()
@@ -161,18 +164,19 @@ class Task:
             self.get_wait_time_optimal()
 
         self.session_start_time = time.time()
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,session'
+        string = self.get_string_to_log('nan,1,session')
+        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+        #          f'{self.time_bg},nan,1,session'
         self.data_writer.log(string)
 
         self.start_block()
 
     def end(self):
         """end a session and shuts all systems"""
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,0,session'
+        string = self.get_string_to_log('nan,0,session')
+        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+        #          f'{self.time_bg},nan,0,session'
         self.data_writer.log(string)
-
         self.visual.shutdown()
         self.spout.shutdown()
         self.data_writer.end()
@@ -192,8 +196,7 @@ class Task:
         self.block_len = len(self.trial_list)
         self.time_bg = statistics.fmean(self.trial_list)
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,block'
+        string = self.get_string_to_log('nan,1,block')
         self.data_writer.log(string)
         print(f"block {self.block_num} with bg_time {self.time_bg:.2f} sec "
               f"starts at {self.block_start_time - self.session_start_time:.2f} seconds")
@@ -210,8 +213,9 @@ class Task:
         self.trial_start_time = time.time()
         self.state = states.IN_BACKGROUND
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg_drawn},nan,1,trial'
+        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
+        #          f'{self.time_bg},nan,1,block'
+        string = self.get_string_to_log('nan,1,trial')
         self.data_writer.log(string)
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
               f"{self.time_bg_drawn:.2f}s starts at {self.trial_start_time - self.session_start_time:.2f} seconds")
@@ -221,8 +225,7 @@ class Task:
     def end_trial(self):
         """ends a trial"""
         self.state = states.TRIAL_ENDS
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg_drawn},nan,0,trial'
+        string = self.get_string_to_log('nan,0,trial')
         self.data_writer.log(string)
 
     def log_lick(self):
@@ -235,8 +238,7 @@ class Task:
 
     def log_lick_ending(self):
         """logs lick ending using data writer"""
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,0,lick'
+        string = self.get_string_to_log('nan,0,lick')
         self.data_writer.log(string)
 
     def start_consumption(self):
@@ -247,8 +249,7 @@ class Task:
         self.total_reward += reward_size
         self.spout.water_on(reward_size)
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},{reward_size},1,reward'
+        string = self.get_string_to_log(f'{reward_size},1,reward')
         self.data_writer.log(string)
         print(f'reward delivered, total reward is {self.total_reward:.2f} uL')
 
@@ -257,8 +258,7 @@ class Task:
         self.state = states.IN_PUNISHMENT
         self.punishment_start_time = time.time()
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,punishment'
+        string = self.get_string_to_log('nan,1,punishment')
         self.data_writer.log(string)
         print('early lick, punishment')
 
@@ -267,8 +267,7 @@ class Task:
         self.state = states.IN_BACKGROUND
         self.trial_start_time = time.time()
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,0,punishment'
+        string = self.get_string_to_log('nan,0,punishment')
         self.data_writer.log(string)
         print('start background time')
 
@@ -278,8 +277,7 @@ class Task:
         print(self.state)
         self.visual.cue_on()
 
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,visual'
+        string = self.get_string_to_log('nan,1,visual')
         self.data_writer.log(string)
         self.cue_start_time = time.time()
 
@@ -294,7 +292,7 @@ class Task:
                 self.spout.water_cleanup()
                 self.visual.cue_cleanup()
                 if self.record:
-                    self.camera_trigger.square_wave(self.data_writer)
+                    self.trigger.square_wave(self.data_writer)
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     self.log_lick()
@@ -327,8 +325,10 @@ class Task:
                 # session ends if total num of trials is reached, or if reward received is larger than 1.5 ml
                 if self.state == states.TRIAL_ENDS:
                     if self.session_trial_num + 1 == self.total_trial_num:
+                        print('total_trial_num reached')
                         break
                     elif self.total_reward >= self.max_reward:
+                        print('max_reward reached')
                         break
                     elif self.block_trial_num + 1 == self.block_len:
                         self.start_block()

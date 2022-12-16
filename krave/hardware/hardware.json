@@ -8,7 +8,8 @@
       "1": [19, 6]
     },
     "camera": 17,
-    "frame_rate": 30,
+    "NI_box": 27,
+    "frequency": 30,
     "exposure_time": 1200
   }
 }
