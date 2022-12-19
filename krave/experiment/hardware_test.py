@@ -4,6 +4,7 @@ from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.camera_trigger import CameraTrigger
+from krave.hardware.trigger import Trigger
 from krave.output.data_writer import DataWriter
 
 import RPi.GPIO as GPIO
@@ -22,6 +23,7 @@ class PiTest:
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
         self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
+        self.trigger = Trigger(self.mouse, self.exp_config)
 
         self.running = False
 
@@ -138,7 +140,19 @@ class PiTest:
     def reset(self):
         self.spout.shutdown()
 
+    def test_square_wave(self):
+        start_time = time.time()
+        time_limit = 1000
+        while start_time + time_limit > time.time():
+            self.camera_trigger.square_wave(self.data_writer)
+        self.reset()
 
+    def test_trigger(self):
+        start_time = time.time()
+        time_limit = 200
+        while start_time + time_limit > time.time():
+            self.trigger.square_wave(self.data_writer)
+        self.reset()
 
 
 

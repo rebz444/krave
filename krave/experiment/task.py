@@ -7,7 +7,7 @@ from krave import utils
 from krave.experiment import states
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
-from krave.hardware.square_wave import SquareWave
+from krave.hardware.trigger import Trigger
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -40,7 +40,7 @@ class Task:
         # initiate hardware
         self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
         self.visual = Visual(self.mouse, self.exp_config)
-        self.trigger = SquareWave(self.mouse, self.exp_config)
+        self.trigger = Trigger(self.mouse, self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, self.forward_file)
 
         # session structure
@@ -165,8 +165,6 @@ class Task:
 
         self.session_start_time = time.time()
         string = self.get_string_to_log('nan,1,session')
-        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-        #          f'{self.time_bg},nan,1,session'
         self.data_writer.log(string)
 
         self.start_block()
@@ -174,11 +172,10 @@ class Task:
     def end(self):
         """end a session and shuts all systems"""
         string = self.get_string_to_log('nan,0,session')
-        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-        #          f'{self.time_bg},nan,0,session'
         self.data_writer.log(string)
         self.visual.shutdown()
         self.spout.shutdown()
+        self.trigger.shutdown()
         self.data_writer.end()
 
     def start_block(self):
@@ -213,8 +210,6 @@ class Task:
         self.trial_start_time = time.time()
         self.state = states.IN_BACKGROUND
 
-        # string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-        #          f'{self.time_bg},nan,1,block'
         string = self.get_string_to_log('nan,1,trial')
         self.data_writer.log(string)
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
@@ -232,8 +227,7 @@ class Task:
         """logs lick using data writer"""
         print(f"lick {self.lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
         self.lick_counter += 1
-        string = f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},' \
-                 f'{self.time_bg},nan,1,lick'
+        string = self.get_string_to_log('nan,1,lick')
         self.data_writer.log(string)
 
     def log_lick_ending(self):
@@ -277,6 +271,8 @@ class Task:
         print(self.state)
         self.visual.cue_on()
 
+        string = self.get_string_to_log('nan,1,wait')
+        self.data_writer.log(string)
         string = self.get_string_to_log('nan,1,visual')
         self.data_writer.log(string)
         self.cue_start_time = time.time()

@@ -5,7 +5,7 @@ from krave import utils
 import RPi.GPIO as GPIO
 
 
-class SquareWave:
+class Trigger:
     def __init__(self, mouse, exp_config):
         self.mouse = mouse
         self.exp_config = exp_config
@@ -35,7 +35,12 @@ class SquareWave:
             data_writer.log(string)
         if (time.time() - self.last_high) > self.interval / 2 and self.high:
             GPIO.output(self.camera_pin, GPIO.LOW)
+            GPIO.output(self.NI_box_pin, GPIO.LOW)
             self.high = False
             string = 'nan,nan,nan,nan,nan,nan,0,square_wave'
             data_writer.log(string)
 
+    def shutdown(self):
+        GPIO.output(self.camera_pin, GPIO.LOW)
+        GPIO.output(self.NI_box_pin, GPIO.LOW)
+        GPIO.cleanup()

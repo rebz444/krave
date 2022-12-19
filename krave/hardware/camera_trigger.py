@@ -16,7 +16,7 @@ class CameraTrigger:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.camera_pin, GPIO.OUT)
 
-        self.frame_rate = self.hardware_config["frame_rate"]
+        self.frame_rate = self.hardware_config["frequency"]
         self.frame_interval = 1 / self.frame_rate
         self.last_frame = 0
         self.cam_high = False
