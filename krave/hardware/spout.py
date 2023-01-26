@@ -1,4 +1,5 @@
 import time
+import json
 
 from krave import utils
 
@@ -8,8 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 
 class Spout:
-    def __init__(self, mouse, exp_config, spout_name):
-        self.mouse = mouse
+    def __init__(self, exp_config, spout_name):
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
@@ -58,11 +58,6 @@ class Spout:
         if self.water_dispensing and self.water_opened_time + self.duration < time.time():
             self.water_off()
 
-    def shutdown(self):
-        self.water_off()
-        GPIO.cleanup()
-        print("GPIO cleaned up")
-
     def get_calibration_curve(self):
         """calculates the relationship between solenoid open time and amount of water delivered"""
         self.total_open_times = np.asarray(self.total_open_times).reshape(-1, 1)
@@ -87,20 +82,28 @@ class Spout:
                 for r in range(repeats):
                     total_open_time = 0
                     for _ in range(iteration):
-                        self.water_on(t)
+                        GPIO.output(self.water_pin, GPIO.HIGH)
                         time.sleep(t)
                         total_open_time += t
-                        self.water_off()
+                        GPIO.output(self.water_pin, GPIO.LOW)
                         time.sleep(0.2)
                     self.total_open_times.append(total_open_time)
                     water_weight = input(f'open time {t} iter {r} water weight: ')
                     self.water_weights.append(float(water_weight))
                     input("Press Enter to continue...")
         finally:
-            self.shutdown()
+            self.water_off()
             print(f'total open times {self.total_open_times}')
             print(f'water weights {self.water_weights}')
             self.get_calibration_curve()
+            calibration_dict = {
+                "calibration_times": self.calibration_times,
+                "total_open_times": self.total_open_times,
+                "water_weights": self.water_weights,
+                "slope": self.slope
+            }
+            out_file = open("calibration_test.json", "w")
+            json.dump(calibration_dict, out_file)
 
     def calculate_duration(self, reward_size_ul):
         """

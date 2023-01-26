@@ -6,24 +6,23 @@ import RPi.GPIO as GPIO
 
 
 class Trigger:
-    def __init__(self, mouse, exp_config):
-        self.mouse = mouse
+    def __init__(self, exp_config):
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
 
         self.camera_pin = self.hardware_config['camera']
         self.NI_box_pin = self.hardware_config['NI_box']
+        self.frequency = self.hardware_config["frequency"]
+        self.interval = 1 / self.frequency
+        self.last_high = 0
+        self.high = False
+
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.camera_pin, GPIO.OUT)
         GPIO.output(self.camera_pin, GPIO.LOW)
         GPIO.setup(self.NI_box_pin, GPIO.OUT)
         GPIO.output(self.NI_box_pin, GPIO.LOW)
-
-        self.frequency = self.hardware_config["frequency"]
-        self.interval = 1 / self.frequency
-        self.last_high = 0
-        self.high = False
 
     def square_wave(self, data_writer):
         if (time.time() - self.last_high) > self.interval:
@@ -43,4 +42,3 @@ class Trigger:
     def shutdown(self):
         GPIO.output(self.camera_pin, GPIO.LOW)
         GPIO.output(self.NI_box_pin, GPIO.LOW)
-        GPIO.cleanup()

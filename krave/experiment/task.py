@@ -11,6 +11,7 @@ from krave.hardware.trigger import Trigger
 from krave.output.data_writer import DataWriter
 
 import pygame
+import RPi.GPIO as GPIO
 
 
 class Task:
@@ -38,9 +39,9 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
-        self.visual = Visual(self.mouse, self.exp_config)
-        self.trigger = Trigger(self.mouse, self.exp_config)
+        self.spout = Spout(self.exp_config, spout_name="1")
+        self.visual = Visual(self.exp_config)
+        self.trigger = Trigger(self.exp_config)
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, self.forward_file)
 
         # session structure
@@ -173,10 +174,13 @@ class Task:
         """end a session and shuts all systems"""
         string = self.get_string_to_log('nan,0,session')
         self.data_writer.log(string)
+
         self.visual.shutdown()
-        self.spout.shutdown()
+        self.spout.water_off()
         self.trigger.shutdown()
         self.data_writer.end()
+
+        GPIO.cleanup()
 
     def start_block(self):
         """

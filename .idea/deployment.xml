@@ -1,29 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="rebekahpi@pi:22 (2)">
-    <serverData>
-      <paths name="rebekahpi@pi:22">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/rebekahpi/Documents" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="rebekahpi@pi:22 (2)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/rebekahpi/Documents" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="rebekahpi@rebekahpi:22 (2)">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/rebekahpi/Documents/krave" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
-    </serverData>
+  <component name="PublishConfigData" autoUpload="Always">
     <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>

@@ -3,7 +3,6 @@ import time
 from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
-from krave.hardware.camera_trigger import CameraTrigger
 from krave.hardware.trigger import Trigger
 from krave.output.data_writer import DataWriter
 
@@ -20,10 +19,9 @@ class PiTest:
         self.cue_duration = self.exp_config["visual_cue_duration"]
 
         self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, forward_file=False)
-        self.spout = Spout(self.mouse, self.exp_config, spout_name="1")
-        self.visual = Visual(self.mouse, self.exp_config)
-        self.camera_trigger = CameraTrigger(self.mouse, self.exp_config)
-        self.trigger = Trigger(self.mouse, self.exp_config)
+        self.spout = Spout(self.exp_config, spout_name="1")
+        self.visual = Visual(self.exp_config)
+        self.trigger = Trigger(self.exp_config)
 
         self.running = False
 
@@ -44,7 +42,7 @@ class PiTest:
                 elif lick_change == -1:
                     print(f"end lick {lick_counter} at {time.time()}")
         finally:
-            self.spout.shutdown()
+            self.spout.water_off()
 
     def test_visual_cue(self):
         start = time.time()
@@ -75,10 +73,11 @@ class PiTest:
                 self.spout.water_off()
                 time.sleep(cool_time)
         finally:
-            self.spout.shutdown()
+            self.spout.water_off()
             self.running = False
 
     def test_visual_with_lick(self):
+        """lick triggers cue onset"""
         time_limit = 30
         start = time.time()
         lick_counter = 0
@@ -106,15 +105,17 @@ class PiTest:
             GPIO.cleanup()
             print("GPIO cleaned up")
             self.visual.shutdown()
+            self.spout.water_off()
 
     def lick_validation(self, n_licks, time_limit=500):
+        """mouse licks and water comes out. pictures are taken in the meantime."""
         start_time = time.time()
         lick_counter = 0
         lick_display_counter = 0
         reward_counter = 0
         try:
             while start_time + time_limit > time.time():
-                self.camera_trigger.square_wave(self.data_writer)
+                self.trigger.square_wave(self.data_writer)
                 self.spout.water_cleanup()
                 self.running = True
                 lick_change = self.spout.lick_status_check()
@@ -133,27 +134,18 @@ class PiTest:
                     self.spout.water_on(.1)
                     reward_counter += 1
         finally:
-            self.spout.shutdown()
+            self.spout.water_off()
             self.data_writer.end()  # sends file to pc and deletes from pi
             self.running = False
 
-    def reset(self):
-        self.spout.shutdown()
-
-    def test_square_wave(self):
-        start_time = time.time()
-        time_limit = 1000
-        while start_time + time_limit > time.time():
-            self.camera_trigger.square_wave(self.data_writer)
-        self.reset()
-
     def test_trigger(self):
+        """tests square wave"""
         start_time = time.time()
         time_limit = 200
         while start_time + time_limit > time.time():
             self.trigger.square_wave(self.data_writer)
-        self.reset()
 
-
+    def test_calibration(self):
+        self.spout.calibrate()
 
 
