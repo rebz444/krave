@@ -1,4 +1,7 @@
 import time
+import json
+import os
+import glob
 
 from krave import utils
 from krave.hardware.spout import Spout
@@ -21,8 +24,8 @@ class PiTest:
         self.trigger = Trigger(self.exp_config)
 
     def end(self):
-        self.visual.shutdown()
         self.spout.water_off()
+        self.visual.shutdown()
         self.trigger.shutdown()
 
         GPIO.cleanup()
@@ -60,10 +63,10 @@ class PiTest:
                 pygame.display.update()
         self.end()
 
-    def test_water(self, open_time=0.01, cool_time=0.2, iterations=1000):
+    def test_water(self, open_time=0.05, cool_time=0.2, iterations=1000):
         """opens solenoid repeatedly"""
         for i in range(iterations):
-            self.spout.water_on(5)
+            self.spout.water_on(5)  # the number doesnt do anything
             time.sleep(open_time)
             print('drop delivered')
             self.spout.water_off()
@@ -108,9 +111,9 @@ class PiTest:
             self.trigger.square_wave(data_writer)
         self.end()
 
-    def test_calibration(self):
-        """test water calibration function"""
+    def spout_calibration(self):
         self.spout.calibrate()
         self.end()
+
 
 

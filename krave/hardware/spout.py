@@ -1,5 +1,6 @@
 import time
 import json
+import os
 
 from krave import utils
 
@@ -13,11 +14,15 @@ class Spout:
         self.exp_config = exp_config
         self.hardware_config_name = self.exp_config['hardware_setup']
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
-        self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
 
-        # calibration info, should be updated everytime calibration is run
+        # calibration info, loads the latest calibration file from pi
+        calibration_file_path = os.path.join('/home', 'pi', 'Documents', 'krave', 'hardware', 'spout_calibration')
+        calibration_latest_file = utils.get_latest_filename(calibration_file_path, '*.json')
+        with open(calibration_latest_file) as f:
+            self.calibration_config = json.load(f)
+        # self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
         self.calibration_times = self.calibration_config['calibration_times']
         self.total_open_times = self.calibration_config['total_open_times']
         self.water_weights = self.calibration_config['water_weights']
@@ -65,7 +70,19 @@ class Spout:
         model = LinearRegression(fit_intercept=False).fit(self.total_open_times, self.water_weights)
         self.slope = model.coef_[0]
         print('slope: ', self.slope)
-        print('REMEMBER TO UPDATE TO spout_calibration.json!!!')
+
+    def save_calibration_json(self):
+        calibration_dict = {
+            "calibration_times": self.calibration_times,
+            "total_open_times": self.total_open_times.flatten().tolist(),
+            "water_weights": self.water_weights.tolist(),
+            "slope": self.slope
+        }
+        datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
+        json_name = "calibration_" + datetime + ".json"
+        file_path = os.path.join('/home', 'pi', 'Documents', 'krave', 'hardware', 'spout_calibration', json_name)
+        out_file = open(file_path, "w")
+        json.dump(calibration_dict, out_file)
 
     def calibrate(self):
         """
@@ -77,7 +94,7 @@ class Spout:
         try:
             print('calibrating port')
             repeats = 1  # repeating the same weight
-            iteration = 100  # number of times opened of solenoid
+            iteration = 2  # number of times opened of solenoid
             for t in self.calibration_times:
                 for r in range(repeats):
                     total_open_time = 0
@@ -96,14 +113,7 @@ class Spout:
             print(f'total open times {self.total_open_times}')
             print(f'water weights {self.water_weights}')
             self.get_calibration_curve()
-            calibration_dict = {
-                "calibration_times": self.calibration_times,
-                "total_open_times": self.total_open_times,
-                "water_weights": self.water_weights,
-                "slope": self.slope
-            }
-            out_file = open("calibration_test.json", "w")
-            json.dump(calibration_dict, out_file)
+            self.save_calibration_json()
 
     def calculate_duration(self, reward_size_ul):
         """

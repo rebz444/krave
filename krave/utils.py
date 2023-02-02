@@ -1,6 +1,8 @@
 import json
 import sympy as sp
 import math
+import glob
+import os
 
 from pkg_resources import resource_string, resource_filename
 
@@ -11,6 +13,11 @@ def get_config(module, filename):
 
 def get_path(module, filename):
     return resource_filename(module, filename)
+
+
+def get_latest_filename(path, filetype):
+    list_of_files = glob.glob(os.path.join(path, filetype))
+    return max(list_of_files, key=os.path.getctime)
 
 
 def calculate_reward(time_wait):
