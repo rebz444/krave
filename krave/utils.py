@@ -1,8 +1,10 @@
 import json
 import sympy as sp
+import numpy as np
 import math
 import glob
 import os
+import pickle
 
 from pkg_resources import resource_string, resource_filename
 
@@ -18,6 +20,29 @@ def get_path(module, filename):
 def get_latest_filename(path, filetype):
     list_of_files = glob.glob(os.path.join(path, filetype))
     return max(list_of_files, key=os.path.getctime)
+
+
+def save_dict_as_json(dict_to_save, path, filename):
+    """
+    saves a dictionary as a json file at indicated location
+    filename needs to end with .json
+    """
+    file_path = os.path.join(path, filename)
+    out_file = open(file_path, "w")
+    json.dump(dict_to_save, out_file)
+
+
+def save_dict_as_pickle(dict_to_save, path, filename):
+    file_path = os.path.join(path, filename)
+    with open(file_path, 'wb') as f:
+        pickle.dump(dict_to_save, f)
+
+
+def load_pickle_as_dict(path, filename):
+    file_path = os.path.join(path, filename)
+    with open(file_path, 'rb') as f:
+        dict_loaded = pickle.load(f)
+    return dict_loaded
 
 
 def calculate_reward(time_wait):
@@ -49,3 +74,20 @@ def calculate_time_wait_optimal(time_bg):
             continue
         else:
             raise ValueError('value not possible')
+
+
+def generate_optimal_value_dict(max_wait_time, step_size):
+    """
+    generates a dictionary with bg_time as keys, [optimal_wait_time, reward_size] as values
+    :param max_wait_time: longest time in wait allowed
+    :param step_size: step between wait times
+    :return: optimal value dictionary
+    """
+    bg_times = np.arange(0.1, max_wait_time+step_size, step_size).tolist()
+    bg_times = [round(t, 2) for t in bg_times]
+    value_dict = dict.fromkeys(bg_times)
+    for t in bg_times:
+        opt = calculate_time_wait_optimal(t)
+        rwd = calculate_reward(opt)
+        value_dict[t] = [opt, rwd]
+    return value_dict

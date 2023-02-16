@@ -2,6 +2,7 @@ import time
 import random
 import numpy as np
 import statistics
+import os
 
 from krave import utils
 from krave.experiment import states
@@ -15,24 +16,19 @@ import RPi.GPIO as GPIO
 
 
 class Task:
-    def __init__(self, mouse, exp_name, training, calibrate=False, record=False, forward_file=False):
+    def __init__(self, mouse, exp_name, training, record=False, forward_file=False):
         # experiment information
-        self.mouse = mouse
         self.exp_name = exp_name
-        self.training = training
         self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
-        self.hardware_name = self.exp_config['hardware_setup']
-        self.calibrate = calibrate
         self.record = record
-        self.forward_file = forward_file
 
-        if self.training == 'shaping1':
+        if training == 'shaping1':
             self.auto_delivery = True
             self.random_draw = False
-        elif self.training == 'shaping2':
+        elif training == 'shaping2':
             self.auto_delivery = True
             self.random_draw = True
-        elif self.training == 'regular':
+        elif training == 'regular':
             self.auto_delivery = False
             self.random_draw = True
         else:
@@ -42,7 +38,7 @@ class Task:
         self.spout = Spout(self.exp_config, spout_name="1")
         self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.exp_config)
-        self.data_writer = DataWriter(self.mouse, self.exp_name, self.exp_config, self.forward_file)
+        self.data_writer = DataWriter(mouse, exp_name, training, self.exp_config, forward_file)
 
         # session structure
         self.time_limit = self.exp_config['time_limit']
@@ -63,6 +59,7 @@ class Task:
         self.consumption_time = self.exp_config['consumption_time']
         self.punishment_time = self.exp_config['punishment_time']
         self.max_wait_time = self.exp_config['max_wait_time']
+        self.wait_time_step_size = self.exp_config['wait_time_step_size']
 
         # session variables
         self.session_start_time = None
@@ -115,8 +112,8 @@ class Task:
 
         count = 0
         for i, (l, t) in enumerate(zip(block_lengths, block_list)):
-            low = t - self.time_bg_range
-            high = t + self.time_bg_range
+            low = t - t * self.time_bg_range
+            high = t + t * self.time_bg_range
             if self.random_draw:
                 drawn_times = np.random.uniform(low, high, l).tolist()
                 drawn_times = [round(item, 1) for item in drawn_times]
@@ -137,23 +134,16 @@ class Task:
         """
         makes a dictionary with block num as key and a list of optimal wait time for each trial as values
         runs for shaping tasks when reward delivery is not lick triggered
-        this function is a bit slow, so must be run before session starts
         """
-        print('Calculating optimal wait times')
-        count = 0  # used
-        total_list = []  # used to check if there are none values in the dict
+        path = os.path.join('/home', 'pi', 'Documents', 'behavior_code', 'krave', 'experiment', 'config')
+        filename = self.exp_name + '_optimal_value_dict.pkl'
+        optimal_value_dict = utils.load_pickle_as_dict(path, filename)
+        print(optimal_value_dict)
         for blk in self.session_dict:
             optimal_list = []
             for trl in self.session_dict[blk]:
-                optimal_list.append(utils.calculate_time_wait_optimal(trl))
-            count += len(optimal_list)
-            total_list.append(optimal_list)
+                optimal_list.append(optimal_value_dict[trl][0])
             self.optimal_dict[blk] = optimal_list
-
-        if count != self.total_trial_num:
-            raise Exception(f'Missing {self.total_trial_num - count} optimal values!')
-        if None in total_list:
-            raise ValueError('None values in optimal_dict')
 
     def get_string_to_log(self, event):
         return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},{self.time_bg},' + event
@@ -164,10 +154,7 @@ class Task:
         if self.auto_delivery:
             self.get_wait_time_optimal()
 
-        self.session_start_time = time.time()
-        string = self.get_string_to_log('nan,1,session')
-        self.data_writer.log(string)
-
+        self.start_session()
         self.start_block()
 
     def end(self):
@@ -181,6 +168,11 @@ class Task:
         self.data_writer.end()
 
         GPIO.cleanup()
+
+    def start_session(self):
+        self.session_start_time = time.time()
+        string = self.get_string_to_log('nan,1,session')
+        self.data_writer.log(string)
 
     def start_block(self):
         """
@@ -285,9 +277,6 @@ class Task:
         """regular behavior session"""
         self.start()
         try:
-            if self.calibrate:
-                self.spout.calibrate()
-
             while self.session_start_time + self.time_limit > time.time():
                 self.spout.water_cleanup()
                 self.visual.cue_cleanup()

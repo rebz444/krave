@@ -16,14 +16,16 @@ class Spout:
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
         self.lick_pin = self.hardware_config['spouts'][spout_name][0]
         self.water_pin = self.hardware_config['spouts'][spout_name][1]
+        self.calibration_times = self.hardware_config['spout_calibration_times']
 
         # calibration info, loads the latest calibration file from pi
-        calibration_file_path = os.path.join('/home', 'pi', 'Documents', 'krave', 'hardware', 'spout_calibration')
-        calibration_latest_file = utils.get_latest_filename(calibration_file_path, '*.json')
+        self.calibration_file_path = os.path.join('/home', 'pi', 'Documents', 'spout_calibration')
+        calibration_latest_file = utils.get_latest_filename(self.calibration_file_path, '*.json')
+        # print(f"last calibration date is {calibration_latest_file}")
         with open(calibration_latest_file) as f:
             self.calibration_config = json.load(f)
+        # activate the line below if no previous calibration info has been saved on the pi
         # self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
-        self.calibration_times = self.calibration_config['calibration_times']
         self.total_open_times = self.calibration_config['total_open_times']
         self.water_weights = self.calibration_config['water_weights']
         self.slope = self.calibration_config['slope']
@@ -80,24 +82,28 @@ class Spout:
         }
         datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
         json_name = "calibration_" + datetime + ".json"
-        file_path = os.path.join('/home', 'pi', 'Documents', 'krave', 'hardware', 'spout_calibration', json_name)
-        out_file = open(file_path, "w")
-        json.dump(calibration_dict, out_file)
+        utils.save_dict_as_json(calibration_dict, self.calibration_file_path, json_name)
 
-    def calibrate(self):
+    def calibrate(self, repeats=1):
         """
          measure water weights with different open time
         :return: total_open_times and water weights
         """
         self.total_open_times = []
         self.water_weights = []
+        tube_weights = []
+        print(f"{len(self.calibration_times) * repeats} tubes needed for calibration")
+        iteration = 100  # number of times opened of solenoid
         try:
-            print('calibrating port')
-            repeats = 1  # repeating the same weight
-            iteration = 2  # number of times opened of solenoid
+            for n in range(len(self.calibration_times) * repeats):
+                tube_weights.append(float(input(f'tube {n} weight: ')))
+
+            n = 0
             for t in self.calibration_times:
                 for r in range(repeats):
                     total_open_time = 0
+                    input(f"get tube {n} ready, press Enter to start dispensing water ..")
+                    n += 1
                     for _ in range(iteration):
                         GPIO.output(self.water_pin, GPIO.HIGH)
                         time.sleep(t)
@@ -105,15 +111,19 @@ class Spout:
                         GPIO.output(self.water_pin, GPIO.LOW)
                         time.sleep(0.2)
                     self.total_open_times.append(total_open_time)
-                    water_weight = input(f'open time {t} iter {r} water weight: ')
-                    self.water_weights.append(float(water_weight))
-                    input("Press Enter to continue...")
+
+            input("measure tube weights, press Enter to entering values ..")
+            for n in range(len(self.calibration_times) * repeats):
+                water_tube_weight = float(input(f'tube {n} with water weight: '))
+                self.water_weights.append(water_tube_weight - tube_weights[n])
         finally:
             self.water_off()
             print(f'total open times {self.total_open_times}')
             print(f'water weights {self.water_weights}')
             self.get_calibration_curve()
             self.save_calibration_json()
+            open_time_for_1ul = self.calculate_duration(1)
+            print(f'open for {open_time_for_1ul:.3f}s per 1ul of reward')
 
     def calculate_duration(self, reward_size_ul):
         """
@@ -123,5 +133,4 @@ class Spout:
         """
         weight_g = reward_size_ul * 0.001
         self.duration = weight_g / self.slope
-        print('sol_open_time: ', round(self.duration, 2))
         return self.duration

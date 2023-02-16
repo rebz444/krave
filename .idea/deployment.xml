@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="pi@rebekahpi1:22">
+  <component name="PublishConfigData" autoUpload="Always" serverName="pi@rebekahpi2:22">
     <serverData>
       <paths name="pi@rebekahpi1:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/pi/Documents" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/pi/Documents/behavior_code" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="pi@rebekahpi2:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/pi/Documents" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/pi/Documents/behavior_code" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
       <paths name="pi@rebekahpi3:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/pi/Documents" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/pi/Documents/behavior_code" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

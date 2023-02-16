@@ -1,7 +1,5 @@
 import time
 
-from krave import utils
-
 import pygame
 
 
@@ -40,7 +38,6 @@ class Visual:
     def cue_cleanup(self):
         if self.cue_displaying and self.cue_on_time + self.cue_duration < time.time():
             self.cue_off()
-            self.cue_displaying = False
 
     def shutdown(self):
         self.cue_displaying = False
