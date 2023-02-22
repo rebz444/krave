@@ -22,15 +22,10 @@ class Task:
         self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
         self.record = record
 
-        if training == 'shaping1':
+        if training == 'shaping':
             self.auto_delivery = True
-            self.random_draw = False
-        elif training == 'shaping2':
-            self.auto_delivery = True
-            self.random_draw = True
         elif training == 'regular':
             self.auto_delivery = False
-            self.random_draw = True
         else:
             raise Exception('Training type invalid')
 
@@ -114,14 +109,10 @@ class Task:
         for i, (l, t) in enumerate(zip(block_lengths, block_list)):
             low = t - t * self.time_bg_range
             high = t + t * self.time_bg_range
-            if self.random_draw:
-                drawn_times = np.random.uniform(low, high, l).tolist()
-                drawn_times = [round(item, 1) for item in drawn_times]
-                self.session_dict[i] = drawn_times
-                count += len(drawn_times)
-            else:
-                self.session_dict[i] = [t] * l
-                count += len(self.session_dict[i])
+            drawn_times = np.random.uniform(low, high, l).tolist()
+            drawn_times = [round(item, 1) for item in drawn_times]
+            self.session_dict[i] = drawn_times
+            count += len(drawn_times)
 
         if count != self.total_trial_num:
             raise Exception('Missing time_bg!')
@@ -196,6 +187,18 @@ class Task:
 
         self.start_trial()
 
+    def log_lick(self):
+        """logs lick using data writer"""
+        print(f"lick {self.lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
+        self.lick_counter += 1
+        string = self.get_string_to_log('nan,1,lick')
+        self.data_writer.log(string)
+
+    def log_lick_ending(self):
+        """logs lick ending using data writer"""
+        string = self.get_string_to_log('nan,0,lick')
+        self.data_writer.log(string)
+
     def start_trial(self):
         """Starts a trial within a block"""
         self.block_trial_num += 1
@@ -217,18 +220,6 @@ class Task:
         """ends a trial"""
         self.state = states.TRIAL_ENDS
         string = self.get_string_to_log('nan,0,trial')
-        self.data_writer.log(string)
-
-    def log_lick(self):
-        """logs lick using data writer"""
-        print(f"lick {self.lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
-        self.lick_counter += 1
-        string = self.get_string_to_log('nan,1,lick')
-        self.data_writer.log(string)
-
-    def log_lick_ending(self):
-        """logs lick ending using data writer"""
-        string = self.get_string_to_log('nan,0,lick')
         self.data_writer.log(string)
 
     def start_consumption(self):
@@ -311,7 +302,7 @@ class Task:
                         and time.time() > self.punishment_start_time + self.punishment_time:
                     self.end_punishment()
 
-                # session ends if total num of trials is reached, or if reward received is larger than 1.5 ml
+                # session ends if total num of trials is reached, or if reward received is larger than max reward
                 if self.state == states.TRIAL_ENDS:
                     if self.session_trial_num + 1 == self.total_trial_num:
                         print('total_trial_num reached')
