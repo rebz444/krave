@@ -43,10 +43,12 @@ class Task:
         self.block_length_range = self.exp_config['block_length_range']
         self.blocks = self.exp_config['blocks']
         self.session_dict = dict.fromkeys(range(self.total_blocks))
-        self.optimal_dict = dict.fromkeys(range(self.total_blocks))
+        self.optimal_wait_dict = dict.fromkeys(range(self.total_blocks))
+        self.random_wait_dict = dict.fromkeys(range(self.total_blocks))
         self.total_trial_num = None
         self.trial_list = None
         self.optimal_list = None
+        self.random_list = None
         self.block_len = None
 
         # trial structure variables
@@ -60,7 +62,8 @@ class Task:
         self.session_start_time = None
         self.block_start_time = None
         self.trial_start_time = None
-        self.cue_start_time = None
+        self.background_start_time = None
+        self.wait_start_time = None
         self.consumption_start_time = None
         self.punishment_start_time = None
 
@@ -70,6 +73,7 @@ class Task:
         self.time_bg = None  # average bg time of the block
         self.time_bg_drawn = None  # drawn bg time from uniform distribution
         self.time_wait_optimal = None
+        self.time_wait_random = None
         self.state = states.IN_BACKGROUND
         self.lick_counter = 0
         self.total_reward = 0
@@ -123,32 +127,46 @@ class Task:
 
     def get_wait_time_optimal(self):
         """
+        used to deliver reward at optimal wait time when reward delivery is not lick triggerd
         makes a dictionary with block num as key and a list of optimal wait time for each trial as values
-        runs for shaping tasks when reward delivery is not lick triggered
+        pulls optimal wait time from saved pickle
         """
         path = os.path.join('/home', 'pi', 'Documents', 'behavior_code', 'krave', 'experiment', 'config')
         filename = self.exp_name + '_optimal_value_dict.pkl'
         optimal_value_dict = utils.load_pickle_as_dict(path, filename)
-        print(optimal_value_dict)
         for blk in self.session_dict:
             optimal_list = []
             for trl in self.session_dict[blk]:
                 optimal_list.append(optimal_value_dict[trl][0])
-            self.optimal_dict[blk] = optimal_list
+            self.optimal_wait_dict[blk] = optimal_list
+
+    def get_random_reward_time(self):
+        """
+        used to deliver reward at random time post cue onset when reward delivery is not lick triggered
+        makes a dictionary with block num as key and a list of random wait time for each trial as values
+        randomly draws wait time
+        """
+        for blk in self.session_dict:
+            num_to_draw = len(self.session_dict[blk])
+            drawn_times = np.random.uniform(0.5, self.max_wait_time, num_to_draw).tolist()
+            self.random_wait_dict[blk] = [round(item, 1) for item in drawn_times]
 
     def get_string_to_log(self, event):
         return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},{self.time_bg},' + event
 
-    def start(self):
-        """starts a session by getting session structure based on the type of training"""
+    def start_session(self):
+        """starts by getting session structure based on the type of training"""
+        self.session_start_time = time.time()
         self.get_session_structure()
         if self.auto_delivery:
             self.get_wait_time_optimal()
 
-        self.start_session()
+        string = self.get_string_to_log('nan,1,session')
+        self.data_writer.log(string)
+
         self.start_block()
 
-    def end(self):
+    def end_session(self):
         """end a session and shuts all systems"""
         string = self.get_string_to_log('nan,0,session')
         self.data_writer.log(string)
@@ -159,24 +177,23 @@ class Task:
         self.data_writer.end()
 
         GPIO.cleanup()
-
-    def start_session(self):
-        self.session_start_time = time.time()
-        string = self.get_string_to_log('nan,1,session')
-        self.data_writer.log(string)
+        print("GPIO cleaned up")
 
     def start_block(self):
         """
         starts a block within a session
-        determines number of trials in the block and avg bg time
+        pulls the number of trials in the block from session_dict
+        pulls times for shaping tasks from optimal_dict
         starts the first trial of the block
         """
+        self.block_start_time = time.time()
+
         self.block_num += 1
         self.block_trial_num = -1  # to make sure correct indexing because start_trial is called in this function
-        self.block_start_time = time.time()
         self.trial_list = self.session_dict[self.block_num]
         if self.auto_delivery:
-            self.optimal_list = self.optimal_dict[self.block_num]
+            self.optimal_list = self.optimal_wait_dict[self.block_num]
+            self.random_list = self.random_wait_dict[self.block_num]
         self.block_len = len(self.trial_list)
         self.time_bg = statistics.fmean(self.trial_list)
 
@@ -186,6 +203,36 @@ class Task:
               f"starts at {self.block_start_time - self.session_start_time:.2f} seconds")
 
         self.start_trial()
+
+    def start_trial(self):
+        """
+        Starts a trial within a block
+        gets background time for the trial
+        gets optimal reward time for shaping task
+        """
+        self.trial_start_time = time.time()
+        self.block_trial_num += 1
+        self.session_trial_num += 1
+        self.time_bg_drawn = self.trial_list[self.block_trial_num]
+
+        string = self.get_string_to_log('nan,1,trial')
+        self.data_writer.log(string)
+        print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
+              f"{self.time_bg_drawn:.2f}s starts at {self.trial_start_time - self.session_start_time:.2f} seconds")
+
+        if self.auto_delivery:
+            self.time_wait_optimal = self.optimal_list[self.block_trial_num]
+            self.time_wait_random = self.random_list[self.block_trial_num]
+            print(f'time_wait_optimal: {self.time_wait_optimal}')
+            print(f'time_wait_random: {self.time_wait_random}')
+
+        self.start_background()
+
+    def end_trial(self):
+        """ends a trial"""
+        self.state = states.TRIAL_ENDS
+        string = self.get_string_to_log('nan,0,trial')
+        self.data_writer.log(string)
 
     def log_lick(self):
         """logs lick using data writer"""
@@ -199,62 +246,19 @@ class Task:
         string = self.get_string_to_log('nan,0,lick')
         self.data_writer.log(string)
 
-    def start_trial(self):
-        """Starts a trial within a block"""
-        self.block_trial_num += 1
-        self.session_trial_num += 1
-        self.time_bg_drawn = self.trial_list[self.block_trial_num]
-        if self.auto_delivery:
-            self.time_wait_optimal = self.optimal_list[self.block_trial_num]
-        self.trial_start_time = time.time()
+    def start_background(self):
+        """starts background time, logs using data writer, trial does not restart if repeated"""
         self.state = states.IN_BACKGROUND
+        self.background_start_time = time.time()
 
-        string = self.get_string_to_log('nan,1,trial')
+        string = self.get_string_to_log('nan,1,background')
         self.data_writer.log(string)
-        print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
-              f"{self.time_bg_drawn:.2f}s starts at {self.trial_start_time - self.session_start_time:.2f} seconds")
-        if self.auto_delivery:
-            print(f'time_wait_optimal: {self.time_wait_optimal}')
-
-    def end_trial(self):
-        """ends a trial"""
-        self.state = states.TRIAL_ENDS
-        string = self.get_string_to_log('nan,0,trial')
-        self.data_writer.log(string)
-
-    def start_consumption(self):
-        """starts consumption time, delivers reward, logs using data writer"""
-        self.state = states.IN_CONSUMPTION
-        self.consumption_start_time = time.time()
-        reward_size = utils.calculate_reward(time.time() - self.cue_start_time)
-        self.total_reward += reward_size
-        self.spout.water_on(reward_size)
-
-        string = self.get_string_to_log(f'{reward_size},1,reward')
-        self.data_writer.log(string)
-        print(f'reward delivered, total reward is {self.total_reward:.2f} uL')
-
-    def start_punishment(self):
-        """starts punishment time, logs using data writer, trial does not restart"""
-        self.state = states.IN_PUNISHMENT
-        self.punishment_start_time = time.time()
-
-        string = self.get_string_to_log('nan,1,punishment')
-        self.data_writer.log(string)
-        print('early lick, punishment')
-
-    def end_punishment(self):
-        """ends punishment time, logs using data writer, enters bg time"""
-        self.state = states.IN_BACKGROUND
-        self.trial_start_time = time.time()
-
-        string = self.get_string_to_log('nan,0,punishment')
-        self.data_writer.log(string)
-        print('start background time')
+        print('background time starts')
 
     def start_wait(self):
         """starts wait time, flash visual cue, logs using data writer"""
         self.state = states.IN_WAIT
+        self.wait_start_time = time.time()
         print(self.state)
         self.visual.cue_on()
 
@@ -262,11 +266,22 @@ class Task:
         self.data_writer.log(string)
         string = self.get_string_to_log('nan,1,visual')
         self.data_writer.log(string)
-        self.cue_start_time = time.time()
+
+    def start_consumption(self):
+        """starts consumption time, delivers reward, logs using data writer"""
+        self.state = states.IN_CONSUMPTION
+        self.consumption_start_time = time.time()
+        reward_size = utils.calculate_reward(time.time() - self.wait_start_time)
+        self.total_reward += reward_size
+        self.spout.water_on(reward_size)
+
+        string = self.get_string_to_log(f'{reward_size},1,reward')
+        self.data_writer.log(string)
+        print(f'{reward_size} ul delivered, total reward is {self.total_reward:.2f} uL')
 
     def run(self):
         """regular behavior session"""
-        self.start()
+        self.start_session()
         try:
             while self.session_start_time + self.time_limit > time.time():
                 self.spout.water_cleanup()
@@ -280,7 +295,7 @@ class Task:
                         if self.state == states.IN_WAIT:
                             self.start_consumption()
                         elif self.state == states.IN_BACKGROUND:
-                            self.start_punishment()
+                            self.start_background()
                 elif lick_change == -1:
                     self.log_lick_ending()
 
@@ -288,19 +303,17 @@ class Task:
                     self.start_wait()
 
                 if self.state == states.IN_WAIT:
-                    if self.auto_delivery and time.time() > self.cue_start_time + self.time_wait_optimal:
+                    # if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_optimal:
+                    #     self.start_consumption()
+                    if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_random:
                         self.start_consumption()
-                    elif not self.auto_delivery and time.time() > self.cue_start_time + self.max_wait_time:
+                    elif not self.auto_delivery and time.time() > self.wait_start_time + self.max_wait_time:
                         print('no lick, miss trial')
                         self.end_trial()
 
                 if self.state == states.IN_CONSUMPTION \
                         and time.time() > self.consumption_start_time + self.consumption_time:
                     self.end_trial()
-
-                if self.state == states.IN_PUNISHMENT \
-                        and time.time() > self.punishment_start_time + self.punishment_time:
-                    self.end_punishment()
 
                 # session ends if total num of trials is reached, or if reward received is larger than max reward
                 if self.state == states.TRIAL_ENDS:
@@ -320,4 +333,4 @@ class Task:
                         print('pygame quit')
                         break
         finally:
-            self.end()
+            self.end_session()
