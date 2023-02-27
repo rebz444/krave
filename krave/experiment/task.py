@@ -160,6 +160,7 @@ class Task:
         self.get_session_structure()
         if self.auto_delivery:
             self.get_wait_time_optimal()
+            self.get_random_reward_time()
 
         string = self.get_string_to_log('nan,1,session')
         self.data_writer.log(string)
@@ -277,7 +278,7 @@ class Task:
 
         string = self.get_string_to_log(f'{reward_size},1,reward')
         self.data_writer.log(string)
-        print(f'{reward_size} ul delivered, total reward is {self.total_reward:.2f} uL')
+        print(f'{reward_size:.2f} ul delivered, total reward is {self.total_reward:.2f} uL')
 
     def run(self):
         """regular behavior session"""
@@ -299,7 +300,7 @@ class Task:
                 elif lick_change == -1:
                     self.log_lick_ending()
 
-                if self.state == states.IN_BACKGROUND and time.time() > self.trial_start_time + self.time_bg_drawn:
+                if self.state == states.IN_BACKGROUND and time.time() > self.background_start_time + self.time_bg_drawn:
                     self.start_wait()
 
                 if self.state == states.IN_WAIT:

@@ -4,11 +4,12 @@ from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
+from krave.hardware.syringe_pump import SyringePump
 from krave.output.data_writer import DataWriter
 
 import pygame
 import RPi.GPIO as GPIO
-from pkg_resources import resource_string
+
 
 class PiTest:
     def __init__(self, exp_name):
@@ -19,6 +20,7 @@ class PiTest:
         self.spout = Spout(self.exp_config, spout_name="1")
         self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.exp_config)
+        self.syringe_pump = SyringePump(self.exp_config)
 
         self.start_time = time.time()
 
@@ -68,7 +70,7 @@ class PiTest:
         self.spout.water_off()
         self.end()
 
-    def free_reward(self, reward_size=5, cool_time=0.02, total_reward=200):
+    def free_reward(self, reward_size=5, cool_time=0.02, total_reward=50):
         open_time = self.spout.calculate_duration(reward_size)
         for _ in range(total_reward):
             self.spout.water_on(open_time)
@@ -133,6 +135,8 @@ class PiTest:
         utils.save_dict_as_pickle(optimal_value_dict, path, filename)
         self.end()
 
+    def test_syringe_pump(self):
+        self.syringe_pump.pump_on()
 
 
 

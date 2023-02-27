@@ -10,6 +10,7 @@
     "spout_calibration_times": [0.01, 0.03, 0.05, 0.08, 0.1],
     "camera": 17,
     "NI_box": 27,
-    "frequency": 50
+    "frequency": 50,
+    "syringe_pump": [16, 20, 21]
   }
 }
