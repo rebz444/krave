@@ -20,12 +20,12 @@ class Spout:
 
         # calibration info, loads the latest calibration file from pi
         self.calibration_file_path = os.path.join('/home', 'pi', 'Documents', 'spout_calibration')
-        calibration_latest_file = utils.get_latest_filename(self.calibration_file_path, '*.json')
+        # calibration_latest_file = utils.get_latest_filename(self.calibration_file_path, '*.json')
         # print(f"last calibration date is {calibration_latest_file}")
-        with open(calibration_latest_file) as f:
-            self.calibration_config = json.load(f)
+        # with open(calibration_latest_file) as f:
+        #     self.calibration_config = json.load(f)
         # activate the line below if no previous calibration info has been saved on the pi
-        # self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
+        self.calibration_config = utils.get_config('krave.hardware', 'spout_calibration.json')
         self.total_open_times = self.calibration_config['total_open_times']
         self.water_weights = self.calibration_config['water_weights']
         self.slope = self.calibration_config['slope']

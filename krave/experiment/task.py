@@ -54,18 +54,19 @@ class Task:
         # trial structure variables
         self.time_bg_range = self.exp_config['time_bg_range']
         self.consumption_time = self.exp_config['consumption_time']
-        self.punishment_time = self.exp_config['punishment_time']
         self.max_wait_time = self.exp_config['max_wait_time']
         self.wait_time_step_size = self.exp_config['wait_time_step_size']
+        self.time_enl = self.exp_config['enforced_no_lick_time']
 
         # session variables
         self.session_start_time = None
         self.block_start_time = None
         self.trial_start_time = None
         self.background_start_time = None
+        self.background_end_time = None
+        self.enl_start_time = None
         self.wait_start_time = None
         self.consumption_start_time = None
-        self.punishment_start_time = None
 
         self.block_num = -1
         self.block_trial_num = -1
@@ -237,7 +238,7 @@ class Task:
 
     def log_lick(self):
         """logs lick using data writer"""
-        print(f"lick {self.lick_counter} at {time.time() - self.session_start_time:.2f} seconds")
+        print(f"lick {self.lick_counter} at {time.time() - self.trial_start_time:.2f} seconds")
         self.lick_counter += 1
         string = self.get_string_to_log('nan,1,lick')
         self.data_writer.log(string)
@@ -248,24 +249,39 @@ class Task:
         self.data_writer.log(string)
 
     def start_background(self):
-        """starts background time, logs using data writer, trial does not restart if repeated"""
+        """starts background time, sets bg_end_time, turns on visual cue,
+        trial does not restart if repeated"""
         self.state = states.IN_BACKGROUND
         self.background_start_time = time.time()
+        self.background_end_time = self.background_start_time + self.time_bg_drawn - self.time_enl
 
         string = self.get_string_to_log('nan,1,background')
         self.data_writer.log(string)
         print('background time starts')
 
+        self.visual.cue_on()
+        string = self.get_string_to_log('nan,1,visual')
+        self.data_writer.log(string)
+
+    def start_enforced_no_lick(self):
+        """last 500ms of bg time is enforced no lick, mouse """
+        self.state = states.IN_ENFORCED_NO_LICK
+        self.enl_start_time = time.time()
+
+        string = self.get_string_to_log('nan,1,enl')
+        self.data_writer.log(string)
+        print('ENL starts')
+
     def start_wait(self):
-        """starts wait time, flash visual cue, logs using data writer"""
+        """starts wait time, turns off visual cue, logs using data writer"""
         self.state = states.IN_WAIT
         self.wait_start_time = time.time()
         print(self.state)
-        self.visual.cue_on()
-
         string = self.get_string_to_log('nan,1,wait')
         self.data_writer.log(string)
-        string = self.get_string_to_log('nan,1,visual')
+
+        self.visual.cue_off()
+        string = self.get_string_to_log('nan,0,visual')
         self.data_writer.log(string)
 
     def start_consumption(self):
@@ -286,7 +302,6 @@ class Task:
         try:
             while self.session_start_time + self.time_limit > time.time():
                 self.spout.water_cleanup()
-                self.visual.cue_cleanup()
                 if self.record:
                     self.trigger.square_wave(self.data_writer)
                 lick_change = self.spout.lick_status_check()
@@ -295,17 +310,18 @@ class Task:
                     if not self.auto_delivery:
                         if self.state == states.IN_WAIT:
                             self.start_consumption()
-                        elif self.state == states.IN_BACKGROUND:
-                            self.start_background()
+                        elif self.state == states.IN_ENFORCED_NO_LICK:
+                            self.start_enforced_no_lick()
                 elif lick_change == -1:
                     self.log_lick_ending()
 
-                if self.state == states.IN_BACKGROUND and time.time() > self.background_start_time + self.time_bg_drawn:
+                if self.state == states.IN_BACKGROUND and time.time() > self.background_end_time:
+                    self.start_enforced_no_lick()
+
+                if self.state == states.IN_ENFORCED_NO_LICK and time.time() > self.enl_start_time + self.time_enl:
                     self.start_wait()
 
                 if self.state == states.IN_WAIT:
-                    # if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_optimal:
-                    #     self.start_consumption()
                     if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_random:
                         self.start_consumption()
                     elif not self.auto_delivery and time.time() > self.wait_start_time + self.max_wait_time:

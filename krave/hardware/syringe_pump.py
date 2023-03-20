@@ -22,7 +22,32 @@ class SyringePump:
         GPIO.output(self.pump_pin_2, GPIO.LOW)
         GPIO.output(self.pump_pin_3, GPIO.LOW)
 
-    def pump_on(self):
+    def pump_pin_1_on(self):
         GPIO.output(self.pump_pin_1, GPIO.HIGH)
-        time.sleep(0.5)
+        time.sleep(0.2)
         GPIO.output(self.pump_pin_1, GPIO.LOW)
+        time.sleep(0.2)
+
+    def pump_pin_2_on(self):
+        GPIO.output(self.pump_pin_2, GPIO.HIGH)
+        time.sleep(0.2)
+        GPIO.output(self.pump_pin_2, GPIO.LOW)
+        time.sleep(0.2)
+
+    def pump_pin_3_on(self):
+        GPIO.output(self.pump_pin_3, GPIO.HIGH)
+        time.sleep(0.2)
+        GPIO.output(self.pump_pin_3, GPIO.LOW)
+        time.sleep(0.2)
+
+    def calibrate_pump_pin_1(self):
+        for _ in range(100):
+            self.pump_pin_1_on()
+
+    def calibrate_pump_pin_2(self):
+        for _ in range(100):
+            self.pump_pin_2_on()
+
+    def calibrate_pump_pin_3(self):
+        for _ in range(100):
+            self.pump_pin_3_on()

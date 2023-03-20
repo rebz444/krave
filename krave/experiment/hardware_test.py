@@ -70,7 +70,7 @@ class PiTest:
         self.spout.water_off()
         self.end()
 
-    def free_reward(self, reward_size=5, cool_time=0.02, total_reward=50):
+    def free_reward(self, reward_size=5, cool_time=0.02, total_reward=20):
         open_time = self.spout.calculate_duration(reward_size)
         for _ in range(total_reward):
             self.spout.water_on(open_time)
@@ -135,8 +135,14 @@ class PiTest:
         utils.save_dict_as_pickle(optimal_value_dict, path, filename)
         self.end()
 
-    def test_syringe_pump(self):
-        self.syringe_pump.pump_on()
+    def calibrate_pump_pin_1(self):
+        self.syringe_pump.calibrate_pump_pin_1()
+
+    def calibrate_pump_pin_2(self):
+        self.syringe_pump.calibrate_pump_pin_2()
+
+    def calibrate_pump_pin_3(self):
+        self.syringe_pump.calibrate_pump_pin_3()
 
 
 
