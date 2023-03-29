@@ -153,7 +153,8 @@ class Task:
             self.random_wait_dict[blk] = [round(item, 1) for item in drawn_times]
 
     def get_string_to_log(self, event):
-        return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},{self.state},{self.time_bg},' + event
+        return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},' \
+               f'{self.state},{self.time_bg_drawn},' + event
 
     def start_session(self):
         """starts by getting session structure based on the type of training"""
@@ -270,7 +271,7 @@ class Task:
 
         string = self.get_string_to_log('nan,1,enl')
         self.data_writer.log(string)
-        print('ENL starts')
+        print(f"ENL starts at {time.time() - self.trial_start_time:.2f} seconds")
 
     def start_wait(self):
         """starts wait time, turns off visual cue, logs using data writer"""
