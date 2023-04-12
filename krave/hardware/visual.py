@@ -10,17 +10,19 @@ class Visual:
 
         self.cue_displaying = False
         self.cue_on_time = None
-
-        pygame.init()
-        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        self.screen.fill((0, 0, 0))
-        pygame.display.update()
+        self.screen = None
 
         # used for displaying an image (currently not in use)
         # self.cue_name = self.exp_config['visual_cue_name']
         # self.cue_path = utils.get_path('krave.hardware', f'visual_cue_img/{self.cue_name}')
         # self.cue_location = tuple(self.exp_config['visual_cue_location'])
         # self.cue = pygame.image.load(self.cue_path)
+
+    def initiate(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.screen.fill((0, 0, 0))
+        pygame.display.update()
 
     def cue_on(self):
         """can flash the screen or show an image. currently flashing the screen green."""

@@ -4,7 +4,7 @@ from krave import utils
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
-from krave.hardware.syringe_pump import SyringePump
+from krave.hardware.spout_pump_new import Reward
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -21,6 +21,7 @@ class PiTest:
         self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.exp_config)
         self.syringe_pump = SyringePump(self.exp_config)
+        self.reward = Reward(self.exp_config, spout_name="1")
 
         self.start_time = time.time()
 
@@ -47,6 +48,7 @@ class PiTest:
     def test_visual_cue(self, time_limit=15):
         """flash visual cue when space bar is pressed"""
         start = time.time()
+        self.visual.initiate()
         while start + time_limit > time.time():
             self.visual.screen.fill((0, 0, 0))
             for event in pygame.event.get():
@@ -135,14 +137,9 @@ class PiTest:
         utils.save_dict_as_pickle(optimal_value_dict, path, filename)
         self.end()
 
-    def calibrate_pump_pin_1(self):
-        self.syringe_pump.calibrate_pump_pin_1()
+    def test_pump(self):
+        self.reward.calculate_pulses(4.1)
 
-    def calibrate_pump_pin_2(self):
-        self.syringe_pump.calibrate_pump_pin_2()
-
-    def calibrate_pump_pin_3(self):
-        self.syringe_pump.calibrate_pump_pin_3()
 
 
 

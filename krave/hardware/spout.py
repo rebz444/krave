@@ -31,7 +31,7 @@ class Spout:
         self.slope = self.calibration_config['slope']
 
         self.lick_status = 0
-        self.lick_record = np.ones([3])
+        self.lick_record = np.ones([2])
         self.duration = 0
         self.water_opened_time = None
         self.water_dispensing = False

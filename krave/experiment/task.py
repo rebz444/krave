@@ -158,6 +158,7 @@ class Task:
 
     def start_session(self):
         """starts by getting session structure based on the type of training"""
+        self.visual.initiate()
         self.session_start_time = time.time()
         self.get_session_structure()
         if self.auto_delivery:
@@ -286,6 +287,7 @@ class Task:
         self.data_writer.log(string)
 
     def start_consumption(self):
+
         """starts consumption time, delivers reward, logs using data writer"""
         self.state = states.IN_CONSUMPTION
         self.consumption_start_time = time.time()
