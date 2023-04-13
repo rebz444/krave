@@ -23,10 +23,7 @@ class Reward:
 
         self.frequency = 50
         self.interval = 1/self.frequency
-        self.last_high = None
-        self.high = False
-        self.high_times = []
-        self.low_times = []
+        self.last_pulse_time = None
 
         self.lick_status = 0
         self.lick_record = np.ones([2])
@@ -55,18 +52,16 @@ class Reward:
     def calculate_pulses(self, reward_size_ul):
         self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.pin_for_reward - 1]))
 
-    def one_pulse(self):
-        if (time.time() - self.last_high) > self.interval:
-            GPIO.output(self.pin_for_reward, GPIO.HIGH)
-            self.last_high = time.time()
-            self.high = True
-        if (time.time() - self.last_high) > self.interval / 2 and self.high:
-            GPIO.output(self.pin_for_reward, GPIO.LOW)
-            self.high = False
+    def reward_cleanup(self):
+        if self.num_pulses > 0:
+            self.send_pulse(pin=self.pin_for_reward)
+            self.num_pulses -= 1
 
-    # def calculate_pulse_times(self):
-    #     self.pulse_start_time = time.time()
-    #     self.high_times =
+    def send_pulse(self, pin):
+        if (time.time() - self.last_pulse_time) > self.interval:
+            GPIO.output(pin, GPIO.HIGH)
+            GPIO.output(pin, GPIO.LOW)
+            self.last_pulse_time = time.time()
 
     def shutdown(self):
         GPIO.output(self.pump_pin_1, GPIO.LOW)
