@@ -4,7 +4,7 @@ import pygame
 
 
 class Visual:
-    def __init__(self, exp_config):
+    def __init__(self, exp_config, hardware_config):
         self.exp_config = exp_config
         self.cue_duration = self.exp_config['visual_cue_duration']
 
@@ -37,7 +37,7 @@ class Visual:
         self.screen.fill((0, 0, 0))
         pygame.display.update()
 
-    def cue_cleanup(self):
+    def cleanup(self):
         if self.cue_displaying and self.cue_on_time + self.cue_duration < time.time():
             self.cue_off()
 

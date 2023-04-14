@@ -1,6 +1,0 @@
-{
-  "calibration_repeats": 100,
-  "pump_pulse_to_turns": [1, 1, 2],
-  "pin_for_reward": 3,
-  "ul_per_turn": 0.065
-}

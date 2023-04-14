@@ -1,43 +1,32 @@
 import time
 
-from krave import utils
-
 import RPi.GPIO as GPIO
 import numpy as np
 
 
 class Reward:
-    def __init__(self, exp_config, spout_name):
-        self.exp_config = exp_config
-        self.hardware_config_name = self.exp_config['hardware_setup']
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
-        self.lick_pin = self.hardware_config['spouts_pump'][spout_name][0]
-        self.pump_pin_1 = self.hardware_config['spouts_pump'][spout_name][1]
-        self.pump_pin_2 = self.hardware_config['spouts_pump'][spout_name][2]
-        self.pump_pin_3 = self.hardware_config['spouts_pump'][spout_name][3]
-
-        self.calibration_config = utils.get_config('krave.hardware', 'pump_calibration.json')
-        self.ul_per_turn = self.calibration_config['ul_per_turn']
-        self.pump_pulse_to_turns = self.calibration_config['pump_pulse_to_turns']
-        self.pin_for_reward = self.calibration_config['pin_for_reward']
-
-        self.frequency = 50
-        self.interval = 1/self.frequency
-        self.last_pulse_time = None
+    def __init__(self, hardware_config):
+        self.lick_pin = hardware_config['spout']
+        self.pump_pins = hardware_config['pump']  # list of pump pin numbers
+        self.reward_pin_index = hardware_config['reward_pin_index']
+        self.reward_pin = self.pump_pins[self.reward_pin_index]  # pin number used for reward
+        self.pump_pulse_to_turns = hardware_config['pump_pulse_to_turns']
+        self.ul_per_turn = hardware_config['ul_per_turn']
+        self.interval = hardware_config['pump_pulse_interval']
+        self.calibration_repeats = hardware_config['calibration_repeats']
+        self.calibration_num_pulses = hardware_config['calibration_num_pulses']
 
         self.lick_status = 0
         self.lick_record = np.ones([2])
+
+        self.last_pulse_time = 0
+        self.high = False
         self.num_pulses = 0
         self.water_dispensing = False
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.lick_pin, GPIO.IN)
-        GPIO.setup(self.pump_pin_1, GPIO.OUT)
-        GPIO.setup(self.pump_pin_2, GPIO.OUT)
-        GPIO.setup(self.pump_pin_3, GPIO.OUT)
-        GPIO.output(self.pump_pin_1, GPIO.LOW)
-        GPIO.output(self.pump_pin_2, GPIO.LOW)
-        GPIO.output(self.pump_pin_3, GPIO.LOW)
+        GPIO.setup(self.pump_pins, GPIO.OUT, initial=GPIO.LOW)
 
     def lick_status_check(self):
         """register change only when current status is different than all two previous status"""
@@ -50,22 +39,45 @@ class Reward:
         return change
 
     def calculate_pulses(self, reward_size_ul):
-        self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.pin_for_reward - 1]))
+        self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.reward_pin_index]))
 
-    def reward_cleanup(self):
-        if self.num_pulses > 0:
-            self.send_pulse(pin=self.pin_for_reward)
-            self.num_pulses -= 1
-
-    def send_pulse(self, pin):
-        if (time.time() - self.last_pulse_time) > self.interval:
+    def send_continuous_pulse(self, pin):
+        if (time.time() - self.last_pulse_time) > self.interval and not self.high:
             GPIO.output(pin, GPIO.HIGH)
-            GPIO.output(pin, GPIO.LOW)
             self.last_pulse_time = time.time()
+            self.high = True
+            print('high')
+            print(time.time())
+        if (time.time() - self.last_pulse_time) > self.interval / 2 and self.high:
+            GPIO.output(pin, GPIO.LOW)
+            self.high = False
+            self.num_pulses -= 1
+            print('low')
+
+    def send_single_pulse(self, pin):
+        GPIO.output(pin, GPIO.HIGH)
+        time.sleep(self.interval/2)
+        GPIO.output(pin, GPIO.LOW)
+        time.sleep(self.interval / 2)
+
+    def cleanup(self):
+        if self.num_pulses > 0:
+            self.water_dispensing = True
+            self.send_continuous_pulse(pin=self.reward_pin)
+        elif self.num_pulses == 0:
+            self.water_dispensing = False
+
+    def calibrate(self):
+        print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
+        for pin in self.pump_pins:
+            for _ in range(self.calibration_repeats):
+                input(f"get tube ready, press Enter to start dispensing water ..")
+                for _ in range(self.calibration_num_pulses):
+                    self.send_single_pulse(pin)
 
     def shutdown(self):
-        GPIO.output(self.pump_pin_1, GPIO.LOW)
-        GPIO.output(self.pump_pin_2, GPIO.LOW)
-        GPIO.output(self.pump_pin_3, GPIO.LOW)
         self.water_dispensing = False
+        for pin in self.pump_pins:
+            GPIO.output(pin, GPIO.LOW)
+
 

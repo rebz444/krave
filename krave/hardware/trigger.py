@@ -6,14 +6,10 @@ import RPi.GPIO as GPIO
 
 
 class Trigger:
-    def __init__(self, exp_config):
-        self.exp_config = exp_config
-        self.hardware_config_name = self.exp_config['hardware_setup']
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
-
-        self.camera_pin = self.hardware_config['camera']
-        self.NI_box_pin = self.hardware_config['NI_box']
-        self.frequency = self.hardware_config["frequency"]
+    def __init__(self, hardware_config):
+        self.camera_pin = hardware_config['camera']
+        self.NI_box_pin = hardware_config['NI_box']
+        self.frequency = hardware_config["trigger_frequency"]
         self.interval = 1 / self.frequency
         self.last_high = 0
         self.high = False
