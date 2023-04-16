@@ -9,6 +9,7 @@ from krave.experiment import states
 from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
+from krave.hardware.spout_pump_new import Reward
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -16,10 +17,11 @@ import RPi.GPIO as GPIO
 
 
 class Task:
-    def __init__(self, mouse, exp_name, training, record=False, forward_file=False):
+    def __init__(self, mouse, exp_name, rig_name, training, record=False, forward_file=False):
         # experiment information
         self.exp_name = exp_name
         self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
+        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
         self.record = record
 
         if training == 'shaping':
@@ -30,9 +32,10 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        self.spout = Spout(self.exp_config, spout_name="1")
-        self.visual = Visual(self.exp_config)
-        self.trigger = Trigger(self.exp_config)
+        # self.spout = Spout(self.exp_config, spout_name="1")
+        self.visual = Visual(self.exp_config, self.hardware_config)
+        self.trigger = Trigger(self.hardware_config)
+        self.reward = Reward(self.hardware_config)
         self.data_writer = DataWriter(mouse, exp_name, training, self.exp_config, forward_file)
 
         # session structure

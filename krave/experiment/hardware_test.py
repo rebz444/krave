@@ -24,58 +24,70 @@ class PiTest:
 
         self.start_time = time.time()
 
-    def test_pump(self, time_limit=5):
+    def test_pump_continuous_pulse(self, time_limit=5):
         self.num_pulses = self.reward.calculate_pulses(5)
         while self.start_time + time_limit > time.time():
             self.reward.cleanup()
+        self.end()
+
+    def test_pump_single_pulse(self):
+        for _ in range(50):
+            self.reward.send_single_pulse(self.reward.reward_pin)
+        self.end()
+
+    def pump_calibrate(self):
+        self.reward.calibrate()
+        self.end()
+
+    def free_reward(self):
+        num_pulses = self.reward.calculate_pulses(2)
+        print(num_pulses)
+        for _ in range(10):
+            for _ in range(num_pulses):
+                self.reward.send_single_pulse(self.reward.reward_pin)
+            time.sleep(3)
+
+    def end(self):
+        # self.spout.water_off()
+        self.visual.shutdown()
+        self.trigger.shutdown()
         self.reward.shutdown()
+
         GPIO.cleanup()
 
-    def test_pulse(self):
-        self.reward.send_single_pulse(self.reward.reward_pin)
-        self.reward.shutdown()
-        GPIO.cleanup()
+    def test_lick_sensor(self, time_limit=15):
+        """prints start and ends lick when spout is touched"""
+        start = time.time()
+        lick_counter = 0
+        while start + time_limit > time.time():
+            lick_change = self.reward.lick_status_check()
+            if lick_change == 1:
+                print(f"start lick {lick_counter} at {time.time() - start:.2f}")
+                lick_counter += 1
+            elif lick_change == -1:
+                print(f"end lick {lick_counter} at {time.time() - start:.2f}")
+        self.end()
 
-    # def end(self):
-    #     self.spout.water_off()
-    #     self.visual.shutdown()
-    #     self.trigger.shutdown()
-    #
-    #     GPIO.cleanup()
-    #
-    # def test_lick_sensor(self, time_limit=15):
-    #     """prints start and ends lick when spout is touched"""
-    #     start = time.time()
-    #     lick_counter = 0
-    #     while start + time_limit > time.time():
-    #         lick_change = self.spout.lick_status_check()
-    #         if lick_change == 1:
-    #             print(f"start lick {lick_counter} at {time.time() - start:.2f}")
-    #             lick_counter += 1
-    #         elif lick_change == -1:
-    #             print(f"end lick {lick_counter} at {time.time() - start:.2f}")
-    #     self.end()
-    #
-    # def test_visual_cue(self, time_limit=15):
-    #     """flash visual cue when space bar is pressed"""
-    #     start = time.time()
-    #     self.visual.initiate()
-    #     while start + time_limit > time.time():
-    #         self.visual.screen.fill((0, 0, 0))
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 print('pygame quit')
-    #                 break
-    #             if event.type == pygame.KEYDOWN:
-    #                 if event.key == pygame.K_SPACE:
-    #                     self.visual.cue_on()
-    #                     print("space is pressed")
-    #             if event.type == pygame.KEYUP:
-    #                 if event.key == pygame.K_SPACE:
-    #                     self.visual.cue_off()
-    #                     print("space is released")
-    #             pygame.display.update()
-    #     self.end()
+    def test_visual_cue(self, time_limit=15):
+        """flash visual cue when space bar is pressed"""
+        start = time.time()
+        self.visual.initiate()
+        while start + time_limit > time.time():
+            self.visual.screen.fill((0, 0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print('pygame quit')
+                    break
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.cue_on()
+                        print("space is pressed")
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.cue_off()
+                        print("space is released")
+                pygame.display.update()
+        self.end()
     #
     # def flush(self, open_time=15):
     #     self.spout.water_on(5)  # the number doesnt do anything

@@ -31,7 +31,6 @@ class Reward:
     def lick_status_check(self):
         """register change only when current status is different than all two previous status"""
         self.lick_record = np.roll(self.lick_record, 1)
-        print(self.lick_record)
         self.lick_record[0] = GPIO.input(self.lick_pin)
         change_bool = np.all(self.lick_record != self.lick_status)
         change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
@@ -40,6 +39,7 @@ class Reward:
 
     def calculate_pulses(self, reward_size_ul):
         self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.reward_pin_index]))
+        return self.num_pulses
 
     def send_continuous_pulse(self, pin):
         if (time.time() - self.last_pulse_time) > self.interval and not self.high:
