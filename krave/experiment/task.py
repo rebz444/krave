@@ -6,10 +6,9 @@ import os
 
 from krave import utils
 from krave.experiment import states
-from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
-from krave.hardware.spout_pump_new import Reward
+from krave.hardware.spout import Spout
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -32,11 +31,11 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        # self.spout = Spout(self.exp_config, spout_name="1")
-        self.visual = Visual(self.exp_config, self.hardware_config)
+        self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.hardware_config)
-        self.reward = Reward(self.hardware_config)
-        self.data_writer = DataWriter(mouse, exp_name, training, self.exp_config, forward_file)
+        self.spout = Spout(self.hardware_config)
+        self.data_writer = DataWriter(mouse, exp_name, training,
+                                      self.exp_config, self.hardware_config, forward_file)
 
         # session structure
         self.time_limit = self.exp_config['time_limit']
@@ -179,7 +178,7 @@ class Task:
         self.data_writer.log(string)
 
         self.visual.shutdown()
-        self.spout.water_off()
+        self.spout.shutdown()
         self.trigger.shutdown()
         self.data_writer.end()
 
@@ -296,7 +295,8 @@ class Task:
         self.consumption_start_time = time.time()
         reward_size = utils.calculate_reward(time.time() - self.wait_start_time)
         self.total_reward += reward_size
-        self.spout.water_on(reward_size)
+        self.spout.calculate_pulses(reward_size)
+        self.spout.send_continuous_pulse(self.spout.reward_pin)
 
         string = self.get_string_to_log(f'{reward_size},1,reward')
         self.data_writer.log(string)
@@ -307,7 +307,7 @@ class Task:
         self.start_session()
         try:
             while self.session_start_time + self.time_limit > time.time():
-                self.spout.water_cleanup()
+                self.spout.cleanup()
                 if self.record:
                     self.trigger.square_wave(self.data_writer)
                 lick_change = self.spout.lick_status_check()

@@ -4,7 +4,7 @@ import pygame
 
 
 class Visual:
-    def __init__(self, exp_config, hardware_config):
+    def __init__(self, exp_config):
         self.exp_config = exp_config
         self.cue_duration = self.exp_config['visual_cue_duration']
 

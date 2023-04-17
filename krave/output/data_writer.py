@@ -7,13 +7,9 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_name, training, exp_config, forward_file):
-        self.mouse = mouse
-        self.exp_name = exp_name
-        self.training = training
+    def __init__(self, mouse, exp_name, training, exp_config, hardware_config, forward_file):
         self.exp_config = exp_config
-        self.hardware_config_name = self.exp_config['hardware_setup']
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[self.hardware_config_name]
+        self.hardware_config = hardware_config
         self.forward_file = forward_file
 
         self.ip = self.hardware_config['desktop_ip']
@@ -22,12 +18,12 @@ class DataWriter:
         self.pi_suer_name = self.hardware_config['pi_user_name']
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
-        self.folder_name = self.datetime + '_' + self.mouse
+        self.folder_name = self.datetime + '_' + mouse
         # self.data_write_path = os.path.join('/media', 'pi', 'rbz_data', self.folder_name)  # thumb drive
         self.data_write_path = os.path.join('/home', 'pi', 'Documents', 'behavior_data', self.folder_name)
         # path on pi
         print("path on pi: ", self.data_write_path)
-        self.filename = "data_" + self.mouse + "_" + self.datetime + ".txt"
+        self.filename = "data_" + mouse + "_" + self.datetime + ".txt"
         self.data_send_path = os.path.join('D:', 'behavior_data')
         self.f = None
 
@@ -38,7 +34,7 @@ class DataWriter:
         self.f = open(self.filename, 'w')  # open the file for writing
         info_fields = 'mouse,date,time,exp,training'
         self.f.write(info_fields + '\n')
-        session_info = [self.mouse, self.datetime[0:10], self.datetime[11:19], self.exp_name, self.training]
+        session_info = [mouse, self.datetime[0:10], self.datetime[11:19], exp_name, training]
         info_string = ','.join(session_info)
         self.f.write(info_string + '\n')
         data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'

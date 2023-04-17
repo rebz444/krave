@@ -1,11 +1,9 @@
 import time
 
 from krave import utils
-from krave.hardware.spout import Spout
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
-from krave.hardware.spout_pump_new import Reward
-from krave.output.data_writer import DataWriter
+from krave.hardware.spout import Spout
 
 import pygame
 import RPi.GPIO as GPIO
@@ -18,9 +16,9 @@ class PiTest:
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
 
         # self.spout = Spout(self.exp_config, spout_name="1")
-        self.visual = Visual(self.exp_config, self.hardware_config)
+        self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.hardware_config)
-        self.reward = Reward(self.hardware_config)
+        self.reward = Spout(self.hardware_config)
 
         self.start_time = time.time()
 
@@ -42,7 +40,7 @@ class PiTest:
     def free_reward(self):
         num_pulses = self.reward.calculate_pulses(2)
         print(num_pulses)
-        for _ in range(10):
+        for _ in range(100):
             for _ in range(num_pulses):
                 self.reward.send_single_pulse(self.reward.reward_pin)
             time.sleep(3)

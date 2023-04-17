@@ -15,7 +15,7 @@ class BlockDefault:
             visual.cue_on()
             while not lick.status_change:
                 continue
-            water.reward(self.reward_distribution)
+            water.spout(self.reward_distribution)
             water.consumption()
             water.ITI()
 
@@ -34,6 +34,6 @@ class BlockExp2:
             visual.cue()
             while not lick.status_change:
                 continue
-            water.reward(self.reward_distribution)
+            water.spout(self.reward_distribution)
             water.consumption()
             water.ITI()
