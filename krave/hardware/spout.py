@@ -54,11 +54,11 @@ class Spout:
 
     def send_single_pulse(self, pin):
         GPIO.output(pin, GPIO.HIGH)
-        time.sleep(self.interval/2)
+        time.sleep(self.interval / 2)
         GPIO.output(pin, GPIO.LOW)
         time.sleep(self.interval / 2)
 
-    def cleanup(self):
+    def water_cleanup(self):
         if self.num_pulses > 0:
             self.water_dispensing = True
             self.send_continuous_pulse(pin=self.reward_pin)
@@ -67,7 +67,7 @@ class Spout:
 
     def calibrate(self):
         print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
-        for pin in self.pump_pins:
+        for pin in self.pump_pins[1:]:
             for _ in range(self.calibration_repeats):
                 input(f"get tube ready, press Enter to start dispensing water ..")
                 for _ in range(self.calibration_num_pulses):
@@ -75,7 +75,6 @@ class Spout:
 
     def shutdown(self):
         self.water_dispensing = False
-        for pin in self.pump_pins:
-            GPIO.output(pin, GPIO.LOW)
+        GPIO.output(self.pump_pins, GPIO.LOW)
 
 

@@ -28,8 +28,25 @@
     "pump": [16, 20, 21],
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
-    "pump_pulse_interval": 0.02,
-    "ul_per_turn": 0.065,
+    "pump_pulse_interval": 0.03,
+    "ul_per_turn": 0.070,
+    "calibration_repeats": 3,
+    "calibration_num_pulses": 100
+  },
+    "rig3": {
+    "desktop_ip": "192.168.137.1",
+    "user_name": "Rebekah",
+    "password": "shuler",
+    "pi_user_name": "pi",
+    "camera": 17,
+    "NI_box": 27,
+    "trigger_frequency": 50,
+    "spout": 19,
+    "pump": [16, 20, 21],
+    "pump_pulse_to_turns": [1, 1, 2],
+    "reward_pin_index": 2,
+    "pump_pulse_interval": 0.03,
+    "ul_per_turn": 0.070,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   }

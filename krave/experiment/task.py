@@ -307,7 +307,7 @@ class Task:
         self.start_session()
         try:
             while self.session_start_time + self.time_limit > time.time():
-                self.spout.cleanup()
+                self.spout.water_cleanup()
                 if self.record:
                     self.trigger.square_wave(self.data_writer)
                 lick_change = self.spout.lick_status_check()
