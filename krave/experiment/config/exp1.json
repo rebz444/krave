@@ -1,8 +1,8 @@
 {
-  "time_limit": 4000,
+  "time_limit": 25,
   "total_blocks": 4,
   "total_trials_median": 200,
-  "block_length_range": 10,
+  "block_length_range": 20,
   "blocks": {"short": 1, "long": 3},
   "enforced_no_lick_time": 0.5,
   "time_bg_range": 0.2,

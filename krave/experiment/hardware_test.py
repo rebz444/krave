@@ -4,7 +4,7 @@ from krave import utils
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
-from krave.hardware.pi_camera import Camera_Pi
+from krave.hardware.pi_camera import PiCamera
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -20,7 +20,7 @@ class PiTest:
         self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.hardware_config)
         self.spout = Spout(self.hardware_config)
-        self.camera = Camera_Pi()
+        self.camera = CameraPi()
 
         self.start_time = time.time()
 
@@ -28,7 +28,7 @@ class PiTest:
         self.visual.shutdown()
         self.trigger.shutdown()
         self.spout.shutdown()
-        self.camera.camera_shutdown()
+        self.camera.shutdown()
 
         GPIO.cleanup()
 
@@ -49,9 +49,9 @@ class PiTest:
         self.end()
 
     def test_pi_camera_preview(self):
-        self.camera.camera_on()
+        self.camera.on()
         time.sleep(20)
-        self.camera.camera_shutdown()
+        self.camera.shutdown()
         self.end()
 
     def test_lick_sensor(self, time_limit=400):

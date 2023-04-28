@@ -20,9 +20,9 @@ class Visual:
 
     def initiate(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((1024, 600))
-        # size = (720, 480)
-        # self.screen = pygame.display.set_mode(size)
+        # self.screen = pygame.display.set_mode((1024, 600))
+        size = (720, 480)
+        self.screen = pygame.display.set_mode(size)
 
         self.screen.fill((0, 0, 0))
         pygame.display.update()

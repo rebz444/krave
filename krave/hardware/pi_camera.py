@@ -1,17 +1,19 @@
-import time
-
 from picamera import PiCamera
 
 
-class Camera_Pi:
+class CameraPi:
     def __init__(self):
         self.camera_pi = PiCamera()
-        self.camera_pi.resolution = (640, 480)
+        self.camera_pi.resolution = (512, 600)
+        self.camera_pi.preview_fullscreen = False
+        self.camera_pi.preview_window = (0, 0, 512, 600)
 
-    def camera_on(self):
+    def on(self):
         self.camera_pi.start_preview()
 
-    def camera_shutdown(self):
+    def off(self):
         self.camera_pi.stop_preview()
-        self.camera_pi.close()
 
+    def shutdown(self):
+        self.off()
+        self.camera_pi.close()
