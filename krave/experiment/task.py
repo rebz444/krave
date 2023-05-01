@@ -8,7 +8,8 @@ from krave.output.data_writer import DataWriter
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
-from krave.hardware.pi_camera import CameraPi
+from krave.hardware.pi_camera2 import CameraPi
+# from krave.archive.pi_camera import CameraPi
 
 
 import pygame
@@ -33,11 +34,12 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        self.visual = Visual(exp_config)
-        self.trigger = Trigger(hardware_config)
-        self.spout = Spout(hardware_config)
-        self.camera = CameraPi()
         self.data_writer = DataWriter(mouse, exp_name, training, exp_config, hardware_config, forward_file)
+        self.visual = Visual(self.data_writer)
+        self.trigger = Trigger(hardware_config)
+        self.spout = Spout(hardware_config, self.data_writer)
+        self.camera = CameraPi()
+
         self.record = record
 
         # trial structure variables
@@ -76,7 +78,7 @@ class Task:
 
     def start_session(self):
         """starts by getting session structure based on the type of training"""
-        self.visual.initiate()
+        # self.visual.initiate()
         self.camera.on()
 
         self.session_start_time = time.time()
@@ -90,7 +92,7 @@ class Task:
 
         self.visual.shutdown()
         self.spout.shutdown()
-        self.camera.shutdown()
+        # self.camera.shutdown()
 
         self.trigger.shutdown()
         self.data_writer.end()
@@ -166,7 +168,6 @@ class Task:
         print('background time starts')
         self.background_end_time = self.background_start_time + self.time_bg_drawn - self.time_enl
         self.visual.cue_on()
-        self.data_writer.log(self.get_string_to_log('nan,1,visual'))
 
     def start_enforced_no_lick(self):
         """last 500ms of bg time is enforced no lick, mouse """
@@ -178,12 +179,10 @@ class Task:
     def start_wait(self):
         """starts wait time, turns off visual cue, logs using data writer"""
         self.state = states.IN_WAIT
+        self.visual.cue_off()
         self.wait_start_time = time.time()
         print(self.state)
         self.data_writer.log(self.get_string_to_log('nan,1,wait'))
-
-        self.visual.cue_off()
-        self.data_writer.log(self.get_string_to_log('nan,0,visual'))
 
     def start_consumption(self):
         """starts consumption time, delivers reward, logs using data writer"""

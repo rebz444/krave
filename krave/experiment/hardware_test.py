@@ -4,7 +4,7 @@ from krave import utils
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
-from krave.hardware.pi_camera import PiCamera
+from krave.archive.pi_camera import CameraPi
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -17,9 +17,11 @@ class PiTest:
         self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
 
+        self.data_writer = DataWriter("test", "exp1", "hardware_test", self.exp_config, self.hardware_config,
+                                      forward_file=False)
         self.visual = Visual(self.exp_config)
         self.trigger = Trigger(self.hardware_config)
-        self.spout = Spout(self.hardware_config)
+        self.spout = Spout(self.hardware_config, self.data_writer)
         self.camera = CameraPi()
 
         self.start_time = time.time()
@@ -38,7 +40,6 @@ class PiTest:
         self.end()
 
     def free_reward(self):
-        self.visual.initiate()
         num_pulses = self.spout.calculate_pulses(2)
         print(num_pulses)
         for i in range(100):
@@ -70,7 +71,6 @@ class PiTest:
     def test_visual_cue(self, time_limit=15):
         """flash visual cue when space bar is pressed"""
         start = time.time()
-        self.visual.initiate()
         while start + time_limit > time.time():
             self.visual.screen.fill((0, 0, 0))
             for event in pygame.event.get():
