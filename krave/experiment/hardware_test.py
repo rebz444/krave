@@ -4,7 +4,7 @@ from krave import utils
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
-from krave.archive.pi_camera import CameraPi
+from krave.hardware.pi_camera import CameraPi
 from krave.output.data_writer import DataWriter
 
 import pygame
@@ -14,14 +14,14 @@ import RPi.GPIO as GPIO
 class PiTest:
     def __init__(self, exp_name, rig_name):
         self.exp_name = exp_name
-        self.exp_config = utils.get_config('krave.experiment', f'config/{self.exp_name}.json')
-        self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
+        self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
+        hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
 
-        self.data_writer = DataWriter("test", "exp1", "hardware_test", self.exp_config, self.hardware_config,
+        self.data_writer = DataWriter("test", "exp1", "hardware_test", self.exp_config, hardware_config,
                                       forward_file=False)
-        self.visual = Visual(self.exp_config)
-        self.trigger = Trigger(self.hardware_config)
-        self.spout = Spout(self.hardware_config, self.data_writer)
+        self.visual = Visual(self.data_writer)
+        self.trigger = Trigger(hardware_config, self.data_writer)
+        self.spout = Spout(hardware_config, self.data_writer)
         self.camera = CameraPi()
 
         self.start_time = time.time()
@@ -90,25 +90,19 @@ class PiTest:
 
     def lick_validation(self, n_licks=15, time_limit=500):
         """mouse licks and water comes out. pictures are taken in the meantime."""
-        data_writer = DataWriter("test", "exp1", "lick_validation",
-                                 self.exp_config, self.hardware_config, forward_file=False)
         lick_counter = 0
         lick_display_counter = 0
         reward_counter = 0
         try:
             while self.start_time + time_limit > time.time():
-                self.trigger.square_wave(data_writer)
+                self.trigger.square_wave()
                 self.spout.water_cleanup()
                 lick_change = self.spout.lick_status_check()
                 if lick_change == 1:
                     lick_counter += 1
                     lick_display_counter += 1
-                    string = f'{reward_counter},{time.time()-self.start_time},{lick_change},lick'
-                    data_writer.log(string)
                     print(f"start lick {lick_display_counter}")
                 elif lick_change == -1:
-                    string = f'{reward_counter},{time.time() - self.start_time},{lick_change},lick'
-                    data_writer.log(string)
                     print(f"end lick {lick_display_counter} at {time.time()-self.start_time:.2f} seconds")
                 if lick_counter >= n_licks:
                     lick_counter = 0
@@ -116,15 +110,12 @@ class PiTest:
                     self.spout.send_continuous_pulse(self.spout.reward_pin)
                     reward_counter += 1
         finally:
-            data_writer.end()
             self.end()
 
     def test_trigger(self, time_limit=200):
         """tests square wave"""
-        data_writer = DataWriter("test", "exp1", "square_wave",
-                                 self.exp_config, self.hardware_config, forward_file=False)
         while self.start_time + time_limit > time.time():
-            self.trigger.square_wave(data_writer)
+            self.trigger.square_wave()
         self.end()
 
     def save_optimal_value_dict(self):

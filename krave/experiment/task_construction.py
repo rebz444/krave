@@ -67,12 +67,13 @@ class TaskConstruction:
         return total_trial_num, session_dict
 
     def get_wait_time_optimal(self, session_dict):
+        # currently not in use. function save_optimal_value_dict in hardware_test is used to save the pickle
         """
         used to deliver reward at optimal wait time when reward delivery is not lick triggerd
         makes a dictionary with block num as key and a list of optimal wait time for each trial as values
         pulls optimal wait time from saved pickle
         """
-        path = os.path.join('/home', 'pi', 'Documents', 'behavior_code', 'krave', 'experiment', 'config')
+        path = os.path.join('/home', 'pi', 'Documents', 'behavior_code', 'krave', 'experiment', '../config')
         filename = self.exp_name + '_optimal_value_dict.pkl'
         optimal_value_dict = utils.load_pickle_as_dict(path, filename)
         optimal_wait_dict = dict.fromkeys(range(self.total_blocks))
@@ -95,11 +96,4 @@ class TaskConstruction:
             drawn_times = np.random.uniform(0.5, self.max_wait_time, num_to_draw).tolist()
             random_wait_dict[blk] = [round(item, 1) for item in drawn_times]
         return random_wait_dict
-
-
-if __name__ == '__main__':
-    exp_config = utils.get_config('krave.experiment', 'config/exp1.json')
-    session_dict = TaskConstruction("exp1", exp_config).get_session_structure()[1]
-    random_dict = TaskConstruction("exp1", exp_config).get_random_reward_time(session_dict)
-    print(random_dict)
 
