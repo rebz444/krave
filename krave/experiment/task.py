@@ -202,6 +202,7 @@ class Task:
         self.spout.send_continuous_pulse(self.spout.reward_pin)
 
     def check_session_status(self):
+        """check if session should end"""
         if self.session_start_time + self.time_limit < time.time():
             print("time limit reached")
             self.running = False
@@ -216,7 +217,6 @@ class Task:
             self.running = False
 
     def run(self):
-        """regular behavior session"""
         self.start_session()
         while self.running:
             if self.record:

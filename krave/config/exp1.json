@@ -1,5 +1,5 @@
 {
-  "time_limit": 5,
+  "time_limit": 4000,
   "total_blocks": 6,
   "total_trials_median": 300,
   "block_length_range": 20,
@@ -10,5 +10,5 @@
   "max_wait_time": 10,
   "wait_time_step_size": 0.1,
   "max_reward": 1000,
-  "max_missed_trial": 5
+  "max_missed_trial": 10
 }
