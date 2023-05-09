@@ -39,10 +39,10 @@ class PiTest:
         self.spout.calibrate()
         self.end()
 
-    def free_reward(self):
-        num_pulses = self.spout.calculate_pulses(2)
+    def free_reward(self, reward_size, num_rewards):
+        num_pulses = self.spout.calculate_pulses(reward_size)
         print(num_pulses)
-        for i in range(100):
+        for i in range(num_rewards):
             print(f'reward number {i}')
             for _ in range(num_pulses):
                 self.spout.send_single_pulse(self.spout.reward_pin)
@@ -55,7 +55,7 @@ class PiTest:
         self.camera.shutdown()
         self.end()
 
-    def test_lick_sensor(self, time_limit=400):
+    def test_lick_sensor(self, time_limit=40):
         """prints start and ends lick when spout is touched"""
         start = time.time()
         lick_counter = 0

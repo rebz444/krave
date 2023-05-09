@@ -31,10 +31,11 @@ class Spout:
 
     def lick_status_check(self):
         """register change only when current status is different than all two previous status"""
-        self.lick_record = np.roll(self.lick_record, 1)
-        self.lick_record[0] = GPIO.input(self.lick_pin)
-        change_bool = np.all(self.lick_record != self.lick_status)
-        change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
+        # self.lick_record = np.roll(self.lick_record, 1)
+        # self.lick_record[0] = GPIO.input(self.lick_pin)
+        # change_bool = np.all(self.lick_record != self.lick_status)
+        # change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
+        change = GPIO.input(self.lick_pin) - self.lick_status
         self.lick_status += change
 
         if change == 1:
@@ -77,7 +78,7 @@ class Spout:
 
     def calibrate(self):
         print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
-        for pin in self.pump_pins[1:]:
+        for pin in self.pump_pins:
             for _ in range(self.calibration_repeats):
                 input(f"get tube ready, press Enter to start dispensing water ..")
                 for _ in range(self.calibration_num_pulses):
