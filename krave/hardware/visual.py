@@ -1,4 +1,5 @@
 import time
+import os
 
 import pygame
 
@@ -8,10 +9,11 @@ class Visual:
         self.data_writer = data_writer
         self.cue_displaying = False
         self.cue_on_time = None
+        os.environ['SDL_VIDEO_WINDOW_POS'] = '0,600'
 
         pygame.init()
-        # self.screen = pygame.display.set_mode((1024, 600))
-        self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
+        self.screen = pygame.display.set_mode((1024, 600))
+        # self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
 
         self.screen.fill((0, 0, 0))
         pygame.display.update()

@@ -72,9 +72,10 @@ class Task:
                f'{self.state},{self.time_bg_drawn},' + event
 
     def start_session(self):
-        """starts by getting session structure based on the type of training"""
+        """starts camera for 10 sec to adjust position before starting session"""
         self.running = True
         self.camera.on()
+        time.sleep(10)
 
         self.session_start_time = time.time()
         self.data_writer.log(self.get_string_to_log('nan,1,session'))
@@ -147,10 +148,11 @@ class Task:
         """
         self.data_writer.log(self.get_string_to_log('nan,0,trial'))
         self.check_session_status()
-        if self.block_trial_num + 1 == self.block_len:
-            self.start_block()
-        else:
-            self.start_trial()
+        if self.running:
+            if self.block_trial_num + 1 == self.block_len:
+                self.start_block()
+            else:
+                self.start_trial()
 
     def start_background(self):
         """starts background time, sets bg_end_time, turns on visual cue,
@@ -231,7 +233,8 @@ class Task:
                 if self.state == states.IN_BACKGROUND and time.time() > self.background_end_time:
                     self.start_enforced_no_lick()
 
-                if self.state == states.IN_ENFORCED_NO_LICK and time.time() > self.enl_start_time + self.time_enl:
+                if self.state == states.IN_ENFORCED_NO_LICK \
+                        and time.time() > self.enl_start_time + self.exp_config['enforced_no_lick_time']:
                     self.start_wait()
 
                 if self.state == states.IN_WAIT:
