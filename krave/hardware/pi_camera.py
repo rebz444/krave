@@ -23,7 +23,3 @@ class CameraPi:
             self.off()
         self.camera_pi.close()
 
-
-if __name__ == '__main__':
-    CameraPi().shutdown()
-

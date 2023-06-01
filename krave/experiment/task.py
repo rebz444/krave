@@ -90,10 +90,10 @@ class Task:
         self.spout.shutdown()
         self.camera.shutdown()
         self.trigger.shutdown()
-        self.data_writer.end()
-
         GPIO.cleanup()
         print("GPIO cleaned up")
+
+        self.data_writer.end()
 
     def start_block(self):
         """
