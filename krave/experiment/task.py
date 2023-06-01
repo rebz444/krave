@@ -163,7 +163,7 @@ class Task:
         self.state = states.IN_BACKGROUND
         self.background_start_time = time.time()
         self.data_writer.log(self.get_string_to_log('nan,1,background'))
-        print('background time starts')
+        print(self.state)
         self.visual.cue_on()
 
     def start_wait(self):
