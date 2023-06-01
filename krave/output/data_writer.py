@@ -7,7 +7,7 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_name, training, exp_config, hardware_config, forward_file):
+    def __init__(self, mouse, exp_name, training, rig, exp_config, hardware_config, forward_file):
         self.exp_config = exp_config
         self.hardware_config = hardware_config
         self.forward_file = forward_file
@@ -32,9 +32,9 @@ class DataWriter:
         os.system('sudo touch ' + self.filename)  # make the file for writing the data
         os.system('sudo chmod o+w ' + self.filename)  # add permission to write in the data file
         self.f = open(self.filename, 'w')  # open the file for writing
-        info_fields = 'mouse,date,time,exp,training'
+        info_fields = 'mouse,date,time,exp,training,rig'
         self.f.write(info_fields + '\n')
-        session_info = [mouse, self.datetime[0:10], self.datetime[11:19], exp_name, training]
+        session_info = [mouse, self.datetime[0:10], self.datetime[11:19], exp_name, training, rig]
         info_string = ','.join(session_info)
         self.f.write(info_string + '\n')
         data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'

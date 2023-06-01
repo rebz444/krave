@@ -33,7 +33,8 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        self.data_writer = DataWriter(mouse, exp_name, training, self.exp_config, hardware_config, forward_file)
+        self.data_writer = DataWriter(mouse, exp_name, training, rig_name,
+                                      self.exp_config, hardware_config, forward_file)
         self.visual = Visual(self.data_writer)
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)
@@ -46,8 +47,6 @@ class Task:
         self.block_start_time = None
         self.trial_start_time = None
         self.background_start_time = None
-        self.background_end_time = None
-        self.enl_start_time = None
         self.wait_start_time = None
         self.consumption_start_time = None
 
@@ -64,7 +63,7 @@ class Task:
         self.state = None
         self.lick_counter = 0
         self.total_reward = 0
-        self.num_missed_trial = 0
+        self.num_miss_trial = 0
         self.running = False
 
     def get_string_to_log(self, event):
@@ -72,11 +71,11 @@ class Task:
                f'{self.state},{self.time_bg_drawn},' + event
 
     def start_session(self):
-        """starts camera for 10 sec to adjust position before starting session"""
-        self.running = True
+        """starts camera for 20 sec to adjust position of the mouse before starting session"""
         self.camera.on()
-        time.sleep(10)
+        time.sleep(20)
 
+        self.running = True
         self.session_start_time = time.time()
         self.data_writer.log(self.get_string_to_log('nan,1,session'))
 
@@ -118,6 +117,10 @@ class Task:
 
         self.start_trial()
 
+    def end_block(self):
+        self.data_writer.log(self.get_string_to_log('nan,0,block'))
+        self.start_block()
+
     def start_trial(self):
         """
         Starts a trial within a block
@@ -146,34 +149,25 @@ class Task:
         starts a new block if trial is the last one in block
         else starts a new trial
         """
+        self.state = states.TRIAL_TRANSITION
         self.data_writer.log(self.get_string_to_log('nan,0,trial'))
         self.check_session_status()
         if self.running:
             if self.block_trial_num + 1 == self.block_len:
-                self.start_block()
+                self.end_block()
             else:
                 self.start_trial()
 
     def start_background(self):
-        """starts background time, sets bg_end_time, turns on visual cue,
-        trial does not restart if repeated"""
+        """starts background time, turns on visual cue"""
         self.state = states.IN_BACKGROUND
         self.background_start_time = time.time()
         self.data_writer.log(self.get_string_to_log('nan,1,background'))
         print('background time starts')
-        self.background_end_time = \
-            self.background_start_time + self.time_bg_drawn - self.exp_config['enforced_no_lick_time']
         self.visual.cue_on()
 
-    def start_enforced_no_lick(self):
-        """last 500ms of bg time is enforced no lick"""
-        self.state = states.IN_ENFORCED_NO_LICK
-        self.enl_start_time = time.time()
-        self.data_writer.log(self.get_string_to_log('nan,1,enl'))
-        print(f"ENL starts at {time.time() - self.trial_start_time:.2f} seconds")
-
     def start_wait(self):
-        """starts wait time, turns off visual cue, logs using data writer"""
+        """starts wait time, turns off visual cue"""
         self.state = states.IN_WAIT
         self.visual.cue_off()
         self.wait_start_time = time.time()
@@ -191,7 +185,7 @@ class Task:
         print(f'waited {time_waited:.2f}s, {reward_size:.2f}ul delivered, total is {self.total_reward:.2f}uL')
 
         self.total_reward += reward_size
-        self.num_missed_trial = 0
+        self.num_miss_trial = 0  # resets miss trial count
         self.spout.calculate_pulses(reward_size)
         self.spout.send_continuous_pulse(self.spout.reward_pin)
 
@@ -206,7 +200,7 @@ class Task:
         elif self.session_trial_num + 1 == self.total_trial_num:
             print('total_trial_num reached')
             self.running = False
-        elif self.num_missed_trial >= self.exp_config['max_missed_trial']:
+        elif self.num_miss_trial >= self.exp_config['max_missed_trial']:
             print('max_missed_trial reached')
             self.running = False
         else:
@@ -214,46 +208,40 @@ class Task:
 
     def run(self):
         self.start_session()
-        try:
-            while self.running:
-                if self.record:
-                    self.trigger.square_wave()
+        while self.running:
+            if self.record:
+                self.trigger.square_wave()
 
-                self.spout.water_cleanup()
-                lick_change = self.spout.lick_status_check()
-                if lick_change == 1:
-                    self.lick_counter += 1
-                    print(f"lick {self.lick_counter} at {time.time() - self.trial_start_time:.2f} seconds")
-                    if not self.auto_delivery:
-                        if self.state == states.IN_WAIT:
-                            self.start_consumption()
-                        elif self.state == states.IN_ENFORCED_NO_LICK:
-                            self.start_enforced_no_lick()
-
-                if self.state == states.IN_BACKGROUND and time.time() > self.background_end_time:
-                    self.start_enforced_no_lick()
-
-                if self.state == states.IN_ENFORCED_NO_LICK \
-                        and time.time() > self.enl_start_time + self.exp_config['enforced_no_lick_time']:
-                    self.start_wait()
-
-                if self.state == states.IN_WAIT:
-                    if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_random:
+            self.spout.water_cleanup()
+            lick_change = self.spout.lick_status_check()
+            if lick_change == 1:
+                self.lick_counter += 1
+                print(f"lick {self.lick_counter} at {time.time() - self.trial_start_time:.2f} seconds")
+                if not self.auto_delivery:
+                    if self.state == states.IN_WAIT:
                         self.start_consumption()
-                    elif not self.auto_delivery \
-                            and time.time() > self.wait_start_time + self.exp_config['max_wait_time']:
-                        print('no lick, missed trial')
-                        self.num_missed_trial += 1
-                        self.end_trial()
 
-                if self.state == states.IN_CONSUMPTION \
-                        and time.time() > self.consumption_start_time + self.exp_config['consumption_time']:
+            if self.state == states.IN_BACKGROUND \
+                    and time.time() > self.background_start_time + self.time_bg_drawn:
+                self.start_wait()
+
+            if self.state == states.IN_WAIT:
+                if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_random:
+                    self.start_consumption()
+                elif not self.auto_delivery \
+                        and time.time() > self.wait_start_time + self.exp_config['max_wait_time']:
+                    print('no lick, missed trial')
+                    self.num_miss_trial += 1
                     self.end_trial()
 
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        print('pygame quit')
-                        self.running = False
+            if self.state == states.IN_CONSUMPTION \
+                    and time.time() > self.consumption_start_time + self.exp_config['consumption_time']:
+                self.end_trial()
 
-        finally:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print('pygame quit')
+                    self.running = False
+
+        if not self.running:
             self.end_session()
