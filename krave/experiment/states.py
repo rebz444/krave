@@ -1,5 +1,4 @@
 IN_BACKGROUND = 'in_background'
-IN_ENFORCED_NO_LICK = 'in_enforced_no_lick'
 IN_WAIT = 'in_wait'
 IN_CONSUMPTION = 'in_consumption'
 TRIAL_TRANSITION = 'trial_transition'

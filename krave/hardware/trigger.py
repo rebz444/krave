@@ -1,7 +1,5 @@
 import time
 
-from krave import utils
-
 import RPi.GPIO as GPIO
 
 

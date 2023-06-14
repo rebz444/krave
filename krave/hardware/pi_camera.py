@@ -4,6 +4,8 @@ from picamera import PiCamera
 class CameraPi:
     def __init__(self):
         self.camera_pi = PiCamera()
+        self.camera_pi.awb_mode = 'shade'
+        self.camera_pi.color_effects = (128, 128)
         self.camera_pi.resolution = (512, 600)
         self.camera_pi.zoom = (0.25, 0.25, 0.5, 0.5)
         self.camera_pi.preview_fullscreen = False

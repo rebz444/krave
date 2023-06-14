@@ -18,7 +18,7 @@ class Visual:
         self.screen.fill((0, 0, 0))
         pygame.display.update()
 
-    def cue_on(self):
+    def on(self):
         """can flash the screen or show an image. currently flashing the screen green."""
         self.screen.fill((0, 255, 0))
         pygame.display.update()
@@ -27,7 +27,7 @@ class Visual:
         self.cue_on_time = time.time()
         self.data_writer.log('nan,nan,nan,nan,nan,nan,1,visual')
 
-    def cue_off(self):
+    def off(self):
         self.screen.fill((0, 0, 0))
         pygame.display.update()
 
@@ -35,5 +35,7 @@ class Visual:
         self.data_writer.log('nan,nan,nan,nan,nan,nan,0,visual')
 
     def shutdown(self):
+        if self.cue_displaying:
+            self.off()
         self.cue_displaying = False
         pygame.quit()

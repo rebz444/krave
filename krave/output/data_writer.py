@@ -19,9 +19,7 @@ class DataWriter:
 
         self.datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
         self.folder_name = self.datetime + '_' + mouse
-        # self.data_write_path = os.path.join('/media', 'pi', 'rbz_data', self.folder_name)  # thumb drive
         self.data_write_path = os.path.join('/home', 'pi', 'Documents', 'behavior_data', self.folder_name)
-        # path on pi
         print("path on pi: ", self.data_write_path)
         self.filename = "data_" + mouse + "_" + self.datetime + ".txt"
         self.data_send_path = os.path.join('D:', 'behavior_data')

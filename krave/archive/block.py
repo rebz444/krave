@@ -12,7 +12,7 @@ class BlockDefault:
     def run(self, water, lick, visual, data_saver):
         """Run block."""
         for trial in self.block_length:
-            visual.cue_on()
+            visual.on()
             while not lick.status_change:
                 continue
             water.spout(self.reward_distribution)

@@ -9,6 +9,7 @@ from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
 from krave.hardware.pi_camera import CameraPi
+from krave.hardware.sound import Sound
 
 import pygame
 import RPi.GPIO as GPIO
@@ -39,6 +40,7 @@ class Task:
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)
         self.camera = CameraPi()
+        self.sound = Sound()
 
         self.record = record
 
@@ -84,6 +86,7 @@ class Task:
     def end_session(self):
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
+        self.sound.on()
 
         self.visual.shutdown()
         self.spout.shutdown()
@@ -164,12 +167,12 @@ class Task:
         self.background_start_time = time.time()
         self.data_writer.log(self.get_string_to_log('nan,1,background'))
         print(self.state)
-        self.visual.cue_on()
+        self.visual.on()
 
     def start_wait(self):
         """starts wait time, turns off visual cue"""
         self.state = states.IN_WAIT
-        self.visual.cue_off()
+        self.visual.off()
         self.wait_start_time = time.time()
         print(self.state)
         self.data_writer.log(self.get_string_to_log('nan,1,wait'))
