@@ -76,13 +76,20 @@ class Spout:
         elif self.num_pulses == 0:
             self.water_dispensing = False
 
-    def calibrate(self):
-        print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
-        for pin in self.pump_pins:
+    def calibrate(self, reward_pin_only=True):
+        if reward_pin_only:
+            print(f"{self.calibration_repeats} tubes needed for calibration")
             for _ in range(self.calibration_repeats):
                 input(f"get tube ready, press Enter to start dispensing water ..")
                 for _ in range(self.calibration_num_pulses):
-                    self.send_single_pulse(pin)
+                    self.send_single_pulse(self.reward_pin)
+        else:
+            print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
+            for pin in self.pump_pins:
+                for _ in range(self.calibration_repeats):
+                    input(f"get tube ready, press Enter to start dispensing water ..")
+                    for _ in range(self.calibration_num_pulses):
+                        self.send_single_pulse(pin)
 
     def shutdown(self):
         self.water_dispensing = False

@@ -40,6 +40,8 @@ class PiTest:
         self.end()
 
     def free_reward(self, reward_size, num_rewards):
+        self.camera.on()
+        time.sleep(20)
         num_pulses = self.spout.calculate_pulses(reward_size)
         print(num_pulses)
         for i in range(num_rewards):
