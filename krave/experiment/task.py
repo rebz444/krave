@@ -87,6 +87,7 @@ class Task:
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
         self.sound.on()
+        print(f"total reward {self.total_reward} ul")
 
         self.visual.shutdown()
         self.spout.shutdown()
