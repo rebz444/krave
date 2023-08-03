@@ -87,8 +87,8 @@ class Task:
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
         self.sound.on()
+        print(f"total trial {self.session_trial_num}")
         print(f"total reward {self.total_reward} ul")
-
         self.visual.shutdown()
         self.spout.shutdown()
         self.camera.shutdown()
@@ -184,11 +184,10 @@ class Task:
         self.consumption_start_time = time.time()
         time_waited = time.time() - self.wait_start_time
         reward_size = utils.calculate_reward(time.time() - self.wait_start_time)
-
+        self.total_reward += reward_size
         self.data_writer.log(self.get_string_to_log(f'{reward_size},1,consumption'))
         print(f'waited {time_waited:.2f}s, {reward_size:.2f}ul delivered, total is {self.total_reward:.2f}uL')
 
-        self.total_reward += reward_size
         self.num_miss_trial = 0  # resets miss trial count
         self.spout.calculate_pulses(reward_size)
         self.spout.send_continuous_pulse(self.spout.reward_pin)
