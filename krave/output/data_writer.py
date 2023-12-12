@@ -7,8 +7,7 @@ from shutil import rmtree
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_name, training, rig, exp_config, hardware_config, forward_file):
-        self.exp_config = exp_config
+    def __init__(self, mouse, exp_name, training, rig, hardware_config, forward_file):
         self.hardware_config = hardware_config
         self.forward_file = forward_file
 

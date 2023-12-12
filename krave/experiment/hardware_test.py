@@ -16,8 +16,7 @@ class PiTest:
         self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
         hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
 
-        self.data_writer = DataWriter("test", exp_name, "hardware_test", rig_name,
-                                      self.exp_config, hardware_config, forward_file=False)
+        self.data_writer = DataWriter("test", exp_name, "hardware_test", rig_name, hardware_config, forward_file=False)
         self.visual = Visual(self.data_writer)
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)

@@ -35,8 +35,7 @@ class Task:
             raise Exception('Training type invalid')
 
         # initiate hardware
-        self.data_writer = DataWriter(mouse, exp_name, training, rig_name,
-                                      self.exp_config, hardware_config, forward_file)
+        self.data_writer = DataWriter(mouse, exp_name, training, rig_name, hardware_config, forward_file)
         self.visual = Visual(self.data_writer)
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)
@@ -95,10 +94,14 @@ class Task:
         GPIO.cleanup()
         print("GPIO cleaned up")
 
+        if len(self.waited_times) == 0:
+            avg_tw = 0
+        else:
+            avg_tw = sum(self.waited_times)/len(self.waited_times)
         session_data = {
             'total_trial': self.session_trial_num,
             'total_reward': self.total_reward,
-            'avg_tw': sum(self.waited_times)/len(self.waited_times)
+            'avg_tw': avg_tw
                         }
         print(session_data)
         self.data_writer.end(session_data)
