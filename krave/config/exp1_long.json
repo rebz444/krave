@@ -1,13 +1,14 @@
 {
   "time_limit": 2400,
   "total_blocks": 1,
-  "total_trials_median": 600,
+  "total_trials_median": 900,
   "block_length_range": 30,
-  "blocks": {"long": 3},
+  "block_types": [6],
   "time_bg_range": 0.2,
   "consumption_time": 3,
   "max_wait_time": 10,
   "wait_time_step_size": 0.1,
   "max_reward": 900,
-  "max_missed_trial": 10
+  "max_missed_trial": 10,
+  "bg_punishment": false
 }

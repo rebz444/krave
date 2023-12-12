@@ -20,7 +20,7 @@ class Task:
         # experiment information
         self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
         hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
-        self.task_construction = TaskConstruction(exp_name, self.exp_config)
+        self.task_construction = TaskConstruction(self.exp_config)
         session_structure = self.task_construction.get_session_structure()
         self.total_trial_num = session_structure[0]
         self.session_dict = session_structure[1]
@@ -65,6 +65,7 @@ class Task:
         self.state = None
         self.lick_counter = 0
         self.total_reward = 0
+        self.waited_times = []
         self.num_miss_trial = 0
         self.running = False
 
@@ -86,9 +87,6 @@ class Task:
     def end_session(self):
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
-        self.sound.on()
-        print(f"total trial {self.session_trial_num}")
-        print(f"total reward {self.total_reward} ul")
         self.visual.shutdown()
         self.spout.shutdown()
         self.camera.shutdown()
@@ -96,7 +94,14 @@ class Task:
         GPIO.cleanup()
         print("GPIO cleaned up")
 
-        self.data_writer.end()
+        session_data = {
+            'total_trial': self.session_trial_num,
+            'total_reward': self.total_reward,
+            'avg_tw': sum(self.waited_times)/len(self.waited_times)
+                        }
+        print(session_data)
+        self.data_writer.end(session_data)
+        self.sound.on()
 
     def start_block(self):
         """
@@ -184,6 +189,7 @@ class Task:
         self.consumption_start_time = time.time()
         time_waited = time.time() - self.wait_start_time
         reward_size = utils.calculate_reward(time.time() - self.wait_start_time)
+        self.waited_times.append(time_waited)
         self.total_reward += reward_size
         self.data_writer.log(self.get_string_to_log(f'{reward_size},1,consumption'))
         print(f'waited {time_waited:.2f}s, {reward_size:.2f}ul delivered, total is {self.total_reward:.2f}uL')
@@ -221,7 +227,9 @@ class Task:
                 self.lick_counter += 1
                 print(f"lick {self.lick_counter} at {time.time() - self.trial_start_time:.2f} seconds")
                 if not self.auto_delivery:
-                    if self.state == states.IN_WAIT:
+                    if self.state == states.IN_BACKGROUND and self.exp_config['bg_punishment']:
+                        self.start_background()
+                    elif self.state == states.IN_WAIT:
                         self.start_consumption()
 
             if self.state == states.IN_BACKGROUND \
