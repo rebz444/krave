@@ -1,10 +1,4 @@
 import json
-import sympy as sp
-import numpy as np
-import math
-import glob
-import os
-import pickle
 
 from pkg_resources import resource_string, resource_filename
 
@@ -17,33 +11,14 @@ def get_path(module, filename):
     return resource_filename(module, filename)
 
 
-def get_latest_filename(path, filetype):
-    list_of_files = glob.glob(os.path.join(path, filetype))
-    return max(list_of_files, key=os.path.getctime)
-
-
-def save_dict_as_json(dict_to_save, path, filename):
-    """
-    saves a dictionary as a json file at indicated location
-    filename needs to end with .json
-    """
-    file_path = os.path.join(path, filename)
-    out_file = open(file_path, "w")
-    json.dump(dict_to_save, out_file)
-
-
-def save_dict_as_pickle(dict_to_save, path, filename):
-    file_path = os.path.join(path, filename)
-    with open(file_path, 'wb') as f:
-        pickle.dump(dict_to_save, f)
-
-
-def load_pickle_as_dict(path, filename):
-    file_path = os.path.join(path, filename)
-    with open(file_path, 'rb') as f:
-        dict_loaded = pickle.load(f)
-    return dict_loaded
-
+def get_exp_name(mouse):
+    cohort = get_config('krave', f'config/cohort.json')
+    for exp_name, mice in cohort.items():
+        if mouse in mice:
+            print(exp_name)
+            return exp_name
+        else:
+            raise Exception('Invalid mouse name')
 
 # def calculate_reward(time_wait):
 #     """
@@ -51,6 +26,7 @@ def load_pickle_as_dict(path, filename):
 #     :return: reward size in ul
 #     """
 #     return 2 * time_wait * math.exp(-time_wait / 10)
+
 
 def calculate_reward(time_wait):
     if 0 <= time_wait < 1:
@@ -70,3 +46,6 @@ def calculate_reward(time_wait):
     elif 7 <= time_wait:
         return 10
 
+
+if __name__ == '__main__':
+    get_exp_name('RZ099')

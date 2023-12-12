@@ -16,8 +16,9 @@ import RPi.GPIO as GPIO
 
 
 class Task:
-    def __init__(self, mouse, exp_name, rig_name, training, record=False, forward_file=True):
+    def __init__(self, mouse, rig_name, training, record=False, forward_file=True):
         # experiment information
+        exp_name = utils.get_exp_name(mouse)
         self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
         hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
         self.task_construction = TaskConstruction(self.exp_config)
