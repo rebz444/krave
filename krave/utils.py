@@ -14,11 +14,10 @@ def get_path(module, filename):
 def get_exp_name(mouse):
     cohort = get_config('krave', f'config/cohort.json')
     for exp_name, mice in cohort.items():
-        if mouse in mice:
+        if mouse in mice or mouse == "test":
             print(exp_name)
             return exp_name
-        else:
-            raise Exception('Invalid mouse name')
+    raise Exception('Invalid mouse name')
 
 # def calculate_reward(time_wait):
 #     """

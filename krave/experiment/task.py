@@ -87,6 +87,7 @@ class Task:
     def end_session(self):
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
+        self.sound.on()
         self.visual.shutdown()
         self.spout.shutdown()
         self.camera.shutdown()
@@ -97,10 +98,10 @@ class Task:
         if len(self.waited_times) == 0:
             avg_tw = 0
         else:
-            avg_tw = sum(self.waited_times)/len(self.waited_times)
+            avg_tw = round(sum(self.waited_times)/len(self.waited_times), 2)
         session_data = {
             'total_trial': self.session_trial_num,
-            'total_reward': self.total_reward,
+            'total_reward': round(self.total_reward, 2),
             'avg_tw': avg_tw
                         }
         print(session_data)
