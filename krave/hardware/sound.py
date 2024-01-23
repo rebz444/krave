@@ -2,7 +2,7 @@ import time
 
 import pygame.mixer
 
-from krave import utils
+from krave.helper import utils
 
 
 class Sound:

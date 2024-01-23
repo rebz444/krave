@@ -12,7 +12,7 @@
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.0664,
+    "ul_per_turn": 0.067,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   },
@@ -29,7 +29,7 @@
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.06775,
+    "ul_per_turn": 0.068,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   },
@@ -46,7 +46,7 @@
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.0599,
+    "ul_per_turn": 0.0609,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   }

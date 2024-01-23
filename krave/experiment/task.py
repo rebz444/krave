@@ -1,9 +1,9 @@
 import time
 import statistics
 
-from krave import utils
-from krave.experiment import states
-from krave.experiment.task_construction import TaskConstruction
+from krave.helper.reward_functions import Reward
+from krave.helper import states, utils
+from krave.helper.task_construction import TaskConstruction
 from krave.output.data_writer import DataWriter
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
@@ -36,6 +36,7 @@ class Task:
 
         # initiate hardware
         self.data_writer = DataWriter(mouse, exp_name, training, rig_name, hardware_config, forward_file)
+        self.reward = Reward(self.exp_config)
         self.visual = Visual(self.data_writer)
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)
@@ -193,7 +194,7 @@ class Task:
         self.state = states.IN_CONSUMPTION
         self.consumption_start_time = time.time()
         time_waited = time.time() - self.wait_start_time
-        reward_size = utils.calculate_reward(time.time() - self.wait_start_time)
+        reward_size = self.reward.calculate_reward(round(time_waited, 1))
         self.waited_times.append(time_waited)
         self.total_reward += reward_size
         self.data_writer.log(self.get_string_to_log(f'{reward_size},1,consumption'))
@@ -245,7 +246,7 @@ class Task:
                 if self.auto_delivery and time.time() > self.wait_start_time + self.time_wait_random:
                     self.start_consumption()
                 elif not self.auto_delivery \
-                        and time.time() > self.wait_start_time + self.exp_config['max_wait_time']:
+                        and time.time() > self.wait_start_time + self.exp_config['max_time_wait']:
                     print('no lick, missed trial')
                     self.num_miss_trial += 1
                     self.end_trial()

@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from krave import utils
+from krave.helper import utils
 
 
 class TaskConstruction:
@@ -9,9 +9,9 @@ class TaskConstruction:
         self.total_blocks = exp_config['total_blocks']  # total number of blocks per session
         self.total_trials_median = exp_config['total_trials_median']  # median number of trials per session
         self.block_length_range = exp_config['block_length_range']
-        self.block_types = exp_config['block_types']
+        self.time_bg_lengths = exp_config['time_bg_lengths']
         self.time_bg_range = exp_config['time_bg_range']
-        self.max_wait_time = exp_config['max_wait_time']
+        self.max_time_wait = exp_config['max_time_wait']
 
     def get_session_structure(self):
         """
@@ -27,9 +27,9 @@ class TaskConstruction:
         total_trial_num = sum(block_lengths)
 
         # make block types alternate
-        random.shuffle(self.block_types)
-        iterations = self.total_blocks // len(self.block_types)
-        block_list = self.block_types * iterations
+        random.shuffle(self.time_bg_lengths)
+        iterations = self.total_blocks // len(self.time_bg_lengths)
+        block_list = self.time_bg_lengths * iterations
 
         session_dict = dict.fromkeys(range(self.total_blocks))
         for i, (l, t) in enumerate(zip(block_lengths, block_list)):
@@ -55,7 +55,7 @@ class TaskConstruction:
         random_wait_dict = dict.fromkeys(range(self.total_blocks))
         for blk in session_dict:
             num_to_draw = len(session_dict[blk])
-            drawn_times = np.random.uniform(0.5, self.max_wait_time, num_to_draw).tolist()
+            drawn_times = np.random.uniform(0.5, self.max_time_wait, num_to_draw).tolist()
             random_wait_dict[blk] = [round(item, 1) for item in drawn_times]
         return random_wait_dict
 

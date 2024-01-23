@@ -1,6 +1,6 @@
 import time
 
-from krave import utils
+from krave.helper import utils
 from krave.hardware.visual import Visual
 from krave.hardware.trigger import Trigger
 from krave.hardware.spout import Spout
@@ -12,11 +12,10 @@ import RPi.GPIO as GPIO
 
 
 class PiTest:
-    def __init__(self, exp_name, rig_name):
-        self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
+    def __init__(self, rig_name):
         hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
-
-        self.data_writer = DataWriter("test", exp_name, "hardware_test", rig_name, hardware_config, forward_file=False)
+        self.data_writer = DataWriter("test", "hardware_test", "hardware_test",
+                                      rig_name, hardware_config, forward_file=False)
         self.visual = Visual(self.data_writer)
         self.trigger = Trigger(hardware_config, self.data_writer)
         self.spout = Spout(hardware_config, self.data_writer)
@@ -117,17 +116,6 @@ class PiTest:
         while self.start_time + time_limit > time.time():
             self.trigger.square_wave()
         self.end()
-
-    # def save_optimal_value_dict(self):
-    #     """generate a dict with varying bg_time as keys and [optimal wait time, reward size] as values,
-    #     saves the dict as pickle in config folder"""
-    #     max_wait_time = self.exp_config['max_wait_time']
-    #     wait_time_step_size = self.exp_config['wait_time_step_size']
-    #     optimal_value_dict = utils.generate_optimal_value_dict(max_wait_time, wait_time_step_size)
-    #     path = 'krave/experiment/config'
-    #     filename = self.exp_name + '_optimal_value_dict.pkl'
-    #     utils.save_dict_as_pickle(optimal_value_dict, path, filename)
-    #     self.end()
 
 
 
