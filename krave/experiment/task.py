@@ -1,5 +1,6 @@
 import time
 import statistics
+import requests
 
 from krave.helper.reward_functions import Reward
 from krave.helper import states, utils
@@ -19,6 +20,7 @@ class Task:
     def __init__(self, mouse, rig_name, training, record=False, forward_file=True):
         # experiment information
         exp_name = utils.get_exp_name(mouse)
+        self.params = {"mouse": mouse}
         self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
         hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
         self.task_construction = TaskConstruction(self.exp_config)
@@ -50,6 +52,7 @@ class Task:
         self.block_start_time = None
         self.trial_start_time = None
         self.background_start_time = None
+        self.background_end_time = None
         self.wait_start_time = None
         self.consumption_start_time = None
 
@@ -89,6 +92,9 @@ class Task:
         """end a session and shuts all systems"""
         self.data_writer.log(self.get_string_to_log('nan,0,session'))
         self.sound.on()
+
+        requests.post(url="https://hooks.slack.com/triggers/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",
+                      json=self.params)
         self.visual.shutdown()
         self.spout.shutdown()
         self.camera.shutdown()
@@ -107,7 +113,6 @@ class Task:
                         }
         print(session_data)
         self.data_writer.end(session_data)
-        self.sound.on()
 
     def start_block(self):
         """
@@ -174,12 +179,22 @@ class Task:
                 self.start_trial()
 
     def start_background(self):
-        """starts background time, turns on visual cue"""
+        """Starts background time, turns on visual cue, and sets end time for background period."""
         self.state = states.IN_BACKGROUND
         self.background_start_time = time.time()
+        # self.background_end_time = self.background_start_time + self.time_bg_drawn + self.exp_config['max_time_bg']
+        self.background_end_time = self.background_start_time + self.time_bg_drawn
         self.data_writer.log(self.get_string_to_log('nan,1,background'))
         print(self.state)
         self.visual.on()
+
+    # def re_start_background(self):
+    #     """Starts background time, turns on visual cue, and sets end time for background period."""
+    #     self.state = states.IN_BACKGROUND
+    #     self.background_start_time = time.time()
+    #     self.data_writer.log(self.get_string_to_log('nan,1,background'))
+    #     print(self.state)
+    #     self.visual.on()
 
     def start_wait(self):
         """starts wait time, turns off visual cue"""
@@ -193,7 +208,7 @@ class Task:
         """starts consumption time, delivers reward, logs using data writer"""
         self.state = states.IN_CONSUMPTION
         self.consumption_start_time = time.time()
-        time_waited = time.time() - self.wait_start_time
+        time_waited = self.consumption_start_time - self.wait_start_time
         reward_size = self.reward.calculate_reward(round(time_waited, 1))
         self.waited_times.append(time_waited)
         self.total_reward += reward_size
@@ -234,12 +249,14 @@ class Task:
                 print(f"lick {self.lick_counter} at {time.time() - self.trial_start_time:.2f} seconds")
                 if not self.auto_delivery:
                     if self.state == states.IN_BACKGROUND and self.exp_config['bg_punishment']:
-                        self.start_background()
+                        if time.time() < self.background_end_time:
+                            self.start_background()
+                        else:
+                            self.start_wait()
                     elif self.state == states.IN_WAIT:
                         self.start_consumption()
 
-            if self.state == states.IN_BACKGROUND \
-                    and time.time() > self.background_start_time + self.time_bg_drawn:
+            if self.state == states.IN_BACKGROUND and time.time() > self.background_start_time + self.time_bg_drawn:
                 self.start_wait()
 
             if self.state == states.IN_WAIT:

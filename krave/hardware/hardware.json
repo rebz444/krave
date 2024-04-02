@@ -1,6 +1,6 @@
 {
   "rig1": {
-    "desktop_ip": "192.168.137.1",
+    "desktop_ip": "192.168.0.13",
     "username": "Rebekah",
     "password": "shuler",
     "pi_username": "pi",
@@ -17,7 +17,7 @@
     "calibration_num_pulses": 100
   },
   "rig2": {
-    "desktop_ip": "192.168.137.1",
+    "desktop_ip": "192.168.0.13",
     "username": "Rebekah",
     "password": "shuler",
     "pi_username": "pi",
@@ -29,12 +29,12 @@
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.068,
+    "ul_per_turn": 0.0686,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   },
     "rig3": {
-    "desktop_ip": "192.168.137.1",
+    "desktop_ip": "192.168.0.13",
     "username": "Rebekah",
     "password": "shuler",
     "pi_username": "pi",
@@ -46,7 +46,7 @@
     "pump_pulse_to_turns": [1, 1, 2],
     "reward_pin_index": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.0609,
+    "ul_per_turn": 0.0659,
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   }

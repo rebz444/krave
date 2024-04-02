@@ -31,7 +31,7 @@ def stepped_sigmoid(time_wait):
 
 
 def probability_boolean(prob):
-    if random.random() > prob:
+    if random.random() < prob:
         return 1
     else:
         return 0
@@ -50,9 +50,9 @@ class Reward:
             self.probability_dict = self.generate_probability_dict()
 
     def generate_probability_dict(self):
-        time_array = np.arange(0, self.exp_config['max_time_wait'] + self.exp_config['wait_time_step_size'],
-                               self.exp_config['wait_time_step_size'])
-        probabilities = expon.cdf(time_array, 0, self.exp_config['scale'])
+        time_array = np.arange(0, self.exp_config['max_time_wait'] + self.exp_config['time_step_size'],
+                               self.exp_config['time_step_size'])
+        probabilities = expon.cdf(time_array, 0, self.exp_config['scale']) * self.exp_config['max_probability']
         time_array = np.round(time_array, 1)
         probability_dict = {time_wait: prob for time_wait, prob in zip(time_array, probabilities)}
         return probability_dict
@@ -71,5 +71,6 @@ if __name__ == '__main__':
     reward = Reward(exp_config)
     print(reward.probability_dict)
     for n in range(100):
+
         reward_size = reward.calculate_reward(2)
         print(reward_size)
