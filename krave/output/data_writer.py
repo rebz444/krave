@@ -1,106 +1,126 @@
 import time
 import os
-import pexpect
 import json
-
+import requests
 from shutil import rmtree
+
+from krave.helper import utils
+
+import paramiko
 
 
 class DataWriter:
-    def __init__(self, mouse, exp_name, training, rig, hardware_config, forward_file):
+    def __init__(self, session_config, exp_config, hardware_config):
+        self.session_config = session_config
+        self.exp_config = exp_config
         self.hardware_config = hardware_config
-        self.forward_file = forward_file
+        self.data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
 
         self.date = time.strftime("%Y-%m-%d")
         self.time = time.strftime("%H-%M-%S")
-        self.dir = self.date + '_' + self.time + '_' + mouse
-        self.data_write_path = os.path.join('/home', 'pi', 'Documents', 'behavior_data', self.dir)
-        print("path on pi: ", self.data_write_path)
-        self.filename = "events_" + self.dir + ".txt"
-        self.data_send_path = os.path.join('D:', 'behavior_data')
+        self.dir = self.date + '_' + self.time + '_' + self.session_config['mouse']
+        self.data_write_path = os.path.join(self.data_writer_config['pi_data_folder'], self.dir)
+        self.data_send_path = os.path.join(self.data_writer_config['pc_data_folder'], self.dir)
 
-        self.ip = self.hardware_config['desktop_ip']
-        self.user = self.hardware_config['username']
-        self.password = self.hardware_config['password']
-        self.pi_username = self.hardware_config['pi_username']
+        self.meta_name = "meta_" + self.dir + ".json"
+        self.events_name = "events_" + self.dir + ".txt"
+        self.events = None
 
-        os.system(f'sudo -u {self.pi_username} mkdir -p ' + self.data_write_path)  # make dir for data write path
-        os.chdir(self.data_write_path)
+        self.make_dir()
+        self.make_meta()
+        self.make_events()
 
-        self.meta = {'mouse': mouse,
-                     'date': self.date,
-                     'time': self.time,
-                     'exp': exp_name,
-                     'training': training,
-                     'rig': rig,
-                     'pump_ul_per_turn': hardware_config['ul_per_turn']}
+    def make_dir(self):
+        os.makedirs(self.data_write_path)
 
-        os.system('sudo touch ' + self.filename)  # make the file for writing the data
-        os.system('sudo chmod o+w ' + self.filename)  # add permission to write in the data file
-        self.f = open(self.filename, 'w')  # open the file for writing
-        data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'
-        self.f.write(data_fields + '\n')
+    def write_json(self, dict_to_save):
+        meta_path = os.path.join(self.data_write_path, self.meta_name)
+        with open(meta_path, "w") as f:
+            json.dump(dict_to_save, f, indent=2)
 
-    def ssh(self, cmd, timeout=30, bg_run=False):
-        """SSH'es to a host using the supplied credentials and executes a command.
-        Throws an exception if the command doesn't return 0.
-        bgrun: run command in the background"""
-
-        options = '-q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oPubkeyAuthentication=no'
-        if bg_run:
-            options += ' -f'
-
-        ssh_cmd = 'ssh %s@%s %s "%s"' % (self.user, self.ip, options, cmd)
-        child = pexpect.spawnu(ssh_cmd, timeout=timeout)  # spawnu for Python 3
-        child.expect(['[Pp]assword: '])
-        child.sendline(self.password)
-        child.expect(pexpect.EOF)
-        child.close()
-
-    def scp(self, timeout=30, bg_run=False):
-        """Scp's to a host using the supplied credentials and executes a command.
-        Throws an exception if the command doesn't return 0.
-        bgrun: run command in the background"""
-
-        options = '-r -q -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -oPubkeyAuthentication=no'
-        if bg_run:
-            options += ' -f'
-        scp_cmd = 'scp %s %s %s@%s:%s' % (options, self.data_write_path, self.user, self.ip, self.data_send_path)
-        print(scp_cmd)
-        print(os.getcwd())
-        child = pexpect.spawnu(scp_cmd, timeout=timeout)  # spawnu for Python 3
-        child.expect(['[Pp]assword: '])
-        child.sendline(self.password)
-        child.expect(pexpect.EOF)
-        child.close()
-        return child.exitstatus
-
-    def log(self, string):
-        session_time = time.time()
-        new_line = str(session_time) + ',' + string + '\n'
-        self.f.write(new_line)
+    def make_meta(self):
+        session_time = {"date": self.date, "time": self.time}
+        self.session_config = session_time | self.session_config
+        meta = {
+            "session_config": self.session_config,
+            "exp_config": self.exp_config,
+            "hardware_config": self.hardware_config
+        }
+        self.write_json(meta)
 
     def update_meta(self, session_data):
-        self.meta = self.meta | session_data
-        meta_path = os.path.join(self.data_write_path, "meta_" + self.dir + ".json")
-        with open(meta_path, 'w') as json_file:
-            json.dump(self.meta, json_file, indent=4)
+        self.session_config |= session_data
+        meta = {
+            "session_config": self.session_config,
+            "exp_config": self.exp_config,
+            "hardware_config": self.hardware_config
+        }
+        self.write_json(meta)
+
+    def make_events(self):
+        events_path = os.path.join(self.data_write_path, self.events_name)
+        self.events = open(events_path, 'w')
+        data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'
+        self.events.write(data_fields + '\n')
+
+    def log(self, string):
+        new_line = str(time.time()) + ',' + string + '\n'
+        self.events.write(new_line)
+
+    def test(self, session_data):
+        self.make_dir()
+        self.make_meta()
+        self.make_events()
+        for _ in range(10):
+            self.log("lol")
+        self.end(session_data)
+
+    def send_dir(self):
+        pc_ip = self.data_writer_config['pc_ip']
+        pc_username = self.data_writer_config['pc_username']
+        pc_password = self.data_writer_config['pc_password']
+
+        ssh_client = paramiko.SSHClient()  # Create the SSHClient object first
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # Set the policy
+        ssh_client.connect(hostname=pc_ip, username=pc_username, password=pc_password)
+
+        sftp = ssh_client.open_sftp()
+        sftp.mkdir(self.data_send_path)
+        for dirpath, dirnames, filenames in os.walk(self.data_write_path):
+            for filename in filenames:
+                local_file = os.path.join(dirpath, filename)
+                remote_file = os.path.join(self.data_send_path,
+                                           os.path.relpath(local_file, self.data_write_path))
+                sftp.put(local_file, remote_file)  # Transfer each file
+        ssh_client.close()
+
+    def post_on_slack(self):
+        requests.post(url="https://hooks.slack.com/triggers/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",
+                      json=self.session_config)
 
     def end(self, session_data=None):
-        self.f.close()
-        self.update_meta(session_data)
-        if self.forward_file:
-            os.chdir('..')
-            os.chdir('..')
-            mkdir_command = 'if not exist %s mkdir %s' % (
-                self.data_send_path.replace('/', '\\'), self.data_send_path.replace('/', '\\'))
-            self.ssh(mkdir_command)
+        self.events.close()
+        if session_data:
+            self.update_meta(session_data)
+        self.post_on_slack()
 
-            if not self.scp():
-                print('\nSuccessful file transfer to "%s"\nDeleting local file from pi.' % self.data_send_path)
-                rmtree(self.data_write_path)
-            else:
-                print('connection back to desktop timed out')
+        if self.session_config['forward_file']:
+            self.send_dir()
+            print('\nSuccessful file transfer to "%s"\nDeleting files from pi.' % self.data_send_path)
+            rmtree(self.data_write_path)
         else:
             print(f'saved locally at {self.data_write_path}')
+
+        print(self.session_config['mouse'], session_data)
+
+
+if __name__ == '__main__':
+    session_config = {"mouse": "test", "exp": "exp2_short", "training": "shaping", "rig": "rig2",
+                      "trainer": "Rebekah", "record": True, "forward_file": True}
+    exp_config = utils.get_config('krave', 'config/exp2_short.json')
+    hardware_config = utils.get_config('krave.hardware', 'hardware.json')["rig2"]
+    session_data = {'total_reward': 65, 'total_trial': 25, 'avg_tw': 0.49, 'ending_code': 1}
+    DataWriter(session_config, exp_config, hardware_config).test(session_data)
+
+
 

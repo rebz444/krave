@@ -29,7 +29,7 @@ class Spout:
         GPIO.setup(self.lick_pin, GPIO.IN)
         GPIO.setup(self.pump_pins, GPIO.OUT, initial=GPIO.LOW)
 
-    def lick_status_check(self):
+    def lick_status_check(self, status):
         """register change only when current status is different than all two previous status"""
         # self.lick_record = np.roll(self.lick_record, 1)
         # self.lick_record[0] = GPIO.input(self.lick_pin)
@@ -39,27 +39,27 @@ class Spout:
         self.lick_status += change
 
         if change == 1:
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,1,lick')
+            self.data_writer.log(status + 'nan,1,lick')
         elif change == -1:
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,0,lick')
+            self.data_writer.log(status + 'nan,0,lick')
 
         return change
 
-    def calculate_pulses(self, reward_size_ul):
+    def calculate_pulses(self, reward_size_ul, status):
         self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.reward_pin_index]))
         print(f'delivering {self.num_pulses} pulses')
-        self.data_writer.log('nan,nan,nan,nan,nan,nan,1,reward')
+        self.data_writer.log(status + 'nan,1,reward')
         return self.num_pulses
 
-    def send_continuous_pulse(self, pin):
+    def send_continuous_pulse(self, status, pin):
         if (time.time() - self.last_pulse_time) > self.interval and not self.high:
             GPIO.output(pin, GPIO.HIGH)
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,1,pump')
+            self.data_writer.log(status + 'nan,1,pump')
             self.last_pulse_time = time.time()
             self.high = True
         if (time.time() - self.last_pulse_time) > self.interval / 2 and self.high:
             GPIO.output(pin, GPIO.LOW)
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,0,pump')
+            self.data_writer.log(status + 'nan,0,pump')
             self.high = False
             self.num_pulses -= 1
 
@@ -69,10 +69,10 @@ class Spout:
         GPIO.output(pin, GPIO.LOW)
         time.sleep(self.interval / 2)
 
-    def water_cleanup(self):
+    def water_cleanup(self, status):
         if self.num_pulses > 0:
             self.water_dispensing = True
-            self.send_continuous_pulse(pin=self.reward_pin)
+            self.send_continuous_pulse(status, pin=self.reward_pin)
         elif self.num_pulses == 0:
             self.water_dispensing = False
 

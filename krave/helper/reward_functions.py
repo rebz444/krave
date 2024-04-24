@@ -71,6 +71,5 @@ if __name__ == '__main__':
     reward = Reward(exp_config)
     print(reward.probability_dict)
     for n in range(100):
-
         reward_size = reward.calculate_reward(2)
         print(reward_size)

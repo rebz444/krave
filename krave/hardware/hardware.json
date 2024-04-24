@@ -1,9 +1,6 @@
 {
-  "rig1": {
-    "desktop_ip": "192.168.0.13",
-    "username": "Rebekah",
-    "password": "shuler",
-    "pi_username": "pi",
+  "rig1":
+  {
     "camera": 17,
     "NI_box": 27,
     "trigger_frequency": 50,
@@ -16,11 +13,8 @@
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   },
-  "rig2": {
-    "desktop_ip": "192.168.0.13",
-    "username": "Rebekah",
-    "password": "shuler",
-    "pi_username": "pi",
+  "rig2":
+  {
     "camera": 17,
     "NI_box": 27,
     "trigger_frequency": 50,
@@ -33,11 +27,8 @@
     "calibration_repeats": 3,
     "calibration_num_pulses": 100
   },
-    "rig3": {
-    "desktop_ip": "192.168.0.13",
-    "username": "Rebekah",
-    "password": "shuler",
-    "pi_username": "pi",
+    "rig3":
+  {
     "camera": 17,
     "NI_box": 27,
     "trigger_frequency": 50,

@@ -1,5 +1,5 @@
 {
-  "time_limit": 27000,
+  "time_limit": 45,
   "total_blocks": 1,
   "total_trials_median": 9000,
   "block_length_range": 30,

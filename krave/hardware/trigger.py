@@ -19,18 +19,18 @@ class Trigger:
         GPIO.setup(self.NI_box_pin, GPIO.OUT)
         GPIO.output(self.NI_box_pin, GPIO.LOW)
 
-    def square_wave(self):
+    def square_wave(self, status):
         if (time.time() - self.last_high) > self.interval:
             GPIO.output(self.camera_pin, GPIO.HIGH)
             GPIO.output(self.NI_box_pin, GPIO.HIGH)
             self.last_high = time.time()
             self.high = True
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,1,trigger')
+            self.data_writer.log(status + 'nan,1,trigger')
         if (time.time() - self.last_high) > self.interval / 2 and self.high:
             GPIO.output(self.camera_pin, GPIO.LOW)
             GPIO.output(self.NI_box_pin, GPIO.LOW)
             self.high = False
-            self.data_writer.log('nan,nan,nan,nan,nan,nan,0,trigger')
+            self.data_writer.log(status + 'nan,0,trigger')
 
     def shutdown(self):
         GPIO.output(self.camera_pin, GPIO.LOW)

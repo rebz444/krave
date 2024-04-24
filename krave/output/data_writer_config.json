@@ -1,0 +1,8 @@
+{
+  "pc_ip": "192.168.0.13",
+  "pc_username": "Rebekah",
+  "pc_password": "shuler",
+  "pc_data_folder": "D:/behavior_data",
+  "pi_username": "pi",
+  "pi_data_folder": "/home/pi/Documents/behavior_data"
+}
