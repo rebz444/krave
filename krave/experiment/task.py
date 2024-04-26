@@ -19,6 +19,7 @@ class Task:
     def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
         # experiment information
         exp_name = utils.get_exp_name(mouse)
+        input(f"running {exp_name}, press Enter to start session ..")
 
         self.session_config = {"mouse": mouse, "exp": exp_name, "training": training, "rig": rig_name,
                                "trainer": trainer, "record": record, "forward_file": forward_file}
