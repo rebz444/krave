@@ -12,8 +12,8 @@ class Visual:
         os.environ['SDL_VIDEO_WINDOW_POS'] = '0,600'
 
         pygame.init()
-        # self.screen = pygame.display.set_mode((1024, 600))  # correct line for pi
-        self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
+        self.screen = pygame.display.set_mode((1024, 600))  # correct line for pi
+        # self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
 
         self.screen.fill((0, 0, 0))
         pygame.display.update()

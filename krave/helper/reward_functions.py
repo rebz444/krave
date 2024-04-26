@@ -50,9 +50,10 @@ class Reward:
             self.probability_dict = self.generate_probability_dict()
 
     def generate_probability_dict(self):
-        time_array = np.arange(0, self.exp_config['max_time_wait'] + self.exp_config['time_step_size'],
+        time_array = np.arange(0, self.exp_config['time_wait_max'] + self.exp_config['time_step_size'],
                                self.exp_config['time_step_size'])
-        probabilities = expon.cdf(time_array, 0, self.exp_config['scale']) * self.exp_config['max_probability']
+        probabilities = expon.cdf(time_array, 0,
+                                  self.exp_config['reward_function_scale']) * self.exp_config['reward_probability']
         time_array = np.round(time_array, 1)
         probability_dict = {time_wait: prob for time_wait, prob in zip(time_array, probabilities)}
         return probability_dict

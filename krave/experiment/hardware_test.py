@@ -41,7 +41,6 @@ class PiTest:
         GPIO.cleanup()
 
     def pump_calibrate(self):
-        print(self.spout.interval)
         self.spout.calibrate()
         self.end()
 

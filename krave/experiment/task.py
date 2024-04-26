@@ -206,7 +206,7 @@ class Task:
 
     def check_session_status(self):
         """check if session should end"""
-        if time.time() > self.session_start_time + self.exp_config['time_limit']:
+        if time.time() > self.session_start_time + self.exp_config['max_time']:
             print("time limit reached")
             self.running = False
             self.ending_code = "time"
@@ -245,13 +245,13 @@ class Task:
         if self.session_config['training'] == "shaping" and time.time() > self.wait_start_time + self.time_wait_random:
             self.start_consumption()
         elif self.session_config['training'] == "regular" \
-                and time.time() > self.wait_start_time + self.exp_config['max_time_wait']:
+                and time.time() > self.wait_start_time + self.exp_config['time_wait_max']:
             print('no lick, missed trial')
             self.num_miss_trial += 1
             self.end_trial()
 
     def handle_consumption_events(self):
-        if time.time() > self.consumption_start_time + self.exp_config['consumption_time']:
+        if time.time() > self.consumption_start_time + self.exp_config['time_consumption']:
             self.end_trial()
 
     def handle_pygame_events(self):

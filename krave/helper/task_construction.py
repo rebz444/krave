@@ -6,8 +6,8 @@ from krave.helper import utils
 
 class TaskConstruction:
     def __init__(self, exp_config):
-        self.total_blocks = exp_config['total_blocks']  # total number of blocks per session
-        self.total_trials_median = exp_config['total_trials_median']  # median number of trials per session
+        self.total_blocks = exp_config['max_blocks']  # total number of blocks per session
+        self.total_trials_median = exp_config['max_trials']  # median number of trials per session
         self.block_length_range = exp_config['block_length_range']
         self.time_bg_lengths = exp_config['time_bg_lengths']
         self.time_bg_range = exp_config['time_bg_range']
