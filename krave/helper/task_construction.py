@@ -11,7 +11,7 @@ class TaskConstruction:
         self.block_length_range = exp_config['block_length_range']
         self.time_bg_lengths = exp_config['time_bg_lengths']
         self.time_bg_range = exp_config['time_bg_range']
-        self.max_time_wait = exp_config['max_time_wait']
+        self.max_time_wait = exp_config['time_wait_max']
 
     def get_session_structure(self):
         """

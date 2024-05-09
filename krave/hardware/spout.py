@@ -8,9 +8,8 @@ class Spout:
     def __init__(self, hardware_config, data_writer):
         self.data_writer = data_writer
         self.lick_pin = hardware_config['spout']
-        self.pump_pins = hardware_config['pump']  # list of pump pin numbers
-        self.reward_pin_index = hardware_config['reward_pin_index']
-        self.reward_pin = self.pump_pins[self.reward_pin_index]  # pin number used for reward
+        self.pump_pins = [hardware_config['pump'], hardware_config['pump_to_box']]
+        # pin number used for reward, and pin number used to sync to NI box
         self.pump_pulse_to_turns = hardware_config['pump_pulse_to_turns']
         self.ul_per_turn = hardware_config['ul_per_turn']
         self.interval = hardware_config['pump_pulse_interval']
@@ -46,19 +45,21 @@ class Spout:
         return change
 
     def calculate_pulses(self, reward_size_ul, status):
-        self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns[self.reward_pin_index]))
+        self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns))
         print(f'delivering {self.num_pulses} pulses')
         self.data_writer.log(status + 'nan,1,reward')
         return self.num_pulses
 
-    def send_continuous_pulse(self, status, pin):
+    def send_continuous_pulse(self, status):
         if (time.time() - self.last_pulse_time) > self.interval and not self.high:
-            GPIO.output(pin, GPIO.HIGH)
+            for pin in self.pump_pins:
+                GPIO.output(pin, GPIO.HIGH)
             self.data_writer.log(status + 'nan,1,pump')
             self.last_pulse_time = time.time()
             self.high = True
         if (time.time() - self.last_pulse_time) > self.interval / 2 and self.high:
-            GPIO.output(pin, GPIO.LOW)
+            for pin in self.pump_pins:
+                GPIO.output(pin, GPIO.LOW)
             self.data_writer.log(status + 'nan,0,pump')
             self.high = False
             self.num_pulses -= 1
@@ -72,27 +73,20 @@ class Spout:
     def water_cleanup(self, status):
         if self.num_pulses > 0:
             self.water_dispensing = True
-            self.send_continuous_pulse(status, pin=self.reward_pin)
+            self.send_continuous_pulse(status)
         elif self.num_pulses == 0:
             self.water_dispensing = False
 
-    def calibrate(self, reward_pin_only=True):
-        if reward_pin_only:
-            print(f"{self.calibration_repeats} tubes needed for calibration")
-            for _ in range(self.calibration_repeats):
-                input(f"get tube ready, press Enter to start dispensing water ..")
-                for _ in range(self.calibration_num_pulses):
-                    self.send_single_pulse(self.reward_pin)
-        else:
-            print(f"{len(self.pump_pins) * self.calibration_repeats} tubes needed for calibration")
-            for pin in self.pump_pins:
-                for _ in range(self.calibration_repeats):
-                    input(f"get tube ready, press Enter to start dispensing water ..")
-                    for _ in range(self.calibration_num_pulses):
-                        self.send_single_pulse(pin)
+    def calibrate(self):
+        print(f"{self.calibration_repeats} tubes needed for calibration")
+        for _ in range(self.calibration_repeats):
+            input(f"get tube ready, press Enter to start dispensing water ..")
+            for _ in range(self.calibration_num_pulses):
+                self.send_single_pulse(self.pump_pins[0])
 
     def shutdown(self):
         self.water_dispensing = False
-        GPIO.output(self.pump_pins, GPIO.LOW)
+        for pin in self.pump_pins:
+            GPIO.output(pin, GPIO.LOW)
 
 

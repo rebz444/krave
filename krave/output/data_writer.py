@@ -102,25 +102,18 @@ class DataWriter:
         self.events.close()
         if session_data:
             self.update_meta(session_data)
-        self.post_on_slack()
 
         if self.session_config['forward_file']:
-            self.send_dir()
-            print('\nSuccessful file transfer to "%s"\nDeleting files from pi.' % self.data_send_path)
-            rmtree(self.data_write_path)
+            try:
+                self.send_dir()
+                print(f'\nSuccessful file transfer to "{self.data_send_path}"\n')
+                rmtree(self.data_write_path)
+                print("Files deleted from local storage.")
+            except Exception as e:
+                print(f"Error transferring files: {e}")
+                print(f'Files saved locally at {self.data_write_path}')
         else:
-            print(f'saved locally at {self.data_write_path}')
+            print(f'Files saved locally at {self.data_write_path}')
 
+        self.post_on_slack()
         print(self.session_config['mouse'], session_data)
-
-
-if __name__ == '__main__':
-    session_config = {"mouse": "test", "exp": "exp2_short", "training": "shaping", "rig": "rig2",
-                      "trainer": "Rebekah", "record": True, "forward_file": True}
-    exp_config = utils.get_config('krave', 'config/exp2_short.json')
-    hardware_config = utils.get_config('krave.hardware', 'hardware.json')["rig2"]
-    session_data = {'total_reward': 65, 'total_trial': 25, 'avg_tw': 0.49, 'ending_code': 1}
-    DataWriter(session_config, exp_config, hardware_config).test(session_data)
-
-
-

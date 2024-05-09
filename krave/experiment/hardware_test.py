@@ -4,9 +4,9 @@ from krave.helper.reward_functions import Reward
 from krave.helper import utils
 from krave.output.data_writer import DataWriter
 from krave.hardware.visual import Visual
-from krave.hardware.trigger import Trigger
+from krave.hardware.camera_basler import CameraBasler
 from krave.hardware.spout import Spout
-from krave.hardware.pi_camera import CameraPi
+from krave.hardware.camera_pi import CameraPi
 from krave.hardware.sound import Sound
 
 import pygame
@@ -24,7 +24,7 @@ class PiTest:
         self.data_writer = DataWriter(self.session_config, self.exp_config, self.hardware_config)
         self.reward = Reward(self.exp_config)
         self.visual = Visual(self.data_writer)
-        self.trigger = Trigger(self.hardware_config, self.data_writer)
+        self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
         self.camera = CameraPi()
         self.sound = Sound()

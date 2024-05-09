@@ -6,9 +6,9 @@ from krave.helper import states, utils
 from krave.helper.task_construction import TaskConstruction
 from krave.output.data_writer import DataWriter
 from krave.hardware.visual import Visual
-from krave.hardware.trigger import Trigger
+from krave.hardware.camera_basler import CameraBasler
 from krave.hardware.spout import Spout
-from krave.hardware.pi_camera import CameraPi
+from krave.hardware.camera_pi import CameraPi
 from krave.hardware.sound import Sound
 
 import pygame
@@ -18,12 +18,11 @@ import RPi.GPIO as GPIO
 class Task:
     def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
         # experiment information
-        exp_name = utils.get_exp_name(mouse)
-        input(f"running {exp_name}, press Enter to start session ..")
+        self.exp_name = utils.get_exp_name(mouse)
 
-        self.session_config = {"mouse": mouse, "exp": exp_name, "training": training, "rig": rig_name,
+        self.session_config = {"mouse": mouse, "exp": self.exp_name, "training": training, "rig": rig_name,
                                "trainer": trainer, "record": record, "forward_file": forward_file}
-        self.exp_config = utils.get_config('krave', f'config/{exp_name}.json')
+        self.exp_config = utils.get_config('krave', f'config/{self.exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
 
         self.task_construction = TaskConstruction(self.exp_config)
@@ -35,7 +34,7 @@ class Task:
         self.data_writer = DataWriter(self.session_config, self.exp_config, self.hardware_config)
         self.reward = Reward(self.exp_config)
         self.visual = Visual(self.data_writer)
-        self.trigger = Trigger(self.hardware_config, self.data_writer)
+        self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
         self.camera = CameraPi()
         self.sound = Sound()
@@ -77,7 +76,7 @@ class Task:
     def start_session(self):
         """starts camera for 20 sec to adjust position of the mouse before starting session"""
         self.camera.on()
-        # time.sleep(20)
+        input(f"running {self.exp_name}, press Enter to start session ..")
 
         self.running = True
         self.session_start_time = time.time()
@@ -203,7 +202,7 @@ class Task:
 
         self.num_miss_trial = 0  # resets miss trial count
         self.spout.calculate_pulses(reward_size, self.status())
-        self.spout.send_continuous_pulse(self.status(), self.spout.reward_pin)
+        self.spout.send_continuous_pulse(self.status())
 
     def check_session_status(self):
         """check if session should end"""

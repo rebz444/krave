@@ -2,9 +2,9 @@ import math
 import random
 import numpy as np
 
-from scipy.stats import expon
-
 from krave.helper import utils
+
+from scipy.stats import expon
 
 
 def exponential(time_wait):
