@@ -67,14 +67,6 @@ class DataWriter:
         new_line = str(time.time()) + ',' + string + '\n'
         self.events.write(new_line)
 
-    def test(self, session_data):
-        self.make_dir()
-        self.make_meta()
-        self.make_events()
-        for _ in range(10):
-            self.log("lol")
-        self.end(session_data)
-
     def send_dir(self):
         pc_ip = self.data_writer_config['pc_ip']
         pc_username = self.data_writer_config['pc_username']

@@ -15,7 +15,7 @@ class Visual:
         self.screen = pygame.display.set_mode((1024, 600))  # correct line for pi
         # self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
 
-        self.screen.fill((0, 0, 0))
+        self.screen.fill((0, 0, 255))
         pygame.display.update()
 
     def on(self, status):

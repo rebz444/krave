@@ -52,7 +52,7 @@ class PiTest:
         for i in range(num_rewards):
             print(f'reward number {i}')
             for _ in range(num_pulses):
-                self.spout.send_single_pulse(self.spout.reward_pin)
+                self.spout.send_single_pulse(self.spout.pump_pins[0])
             time.sleep(3)
         self.end()
 
@@ -114,7 +114,7 @@ class PiTest:
                 if lick_counter >= n_licks:
                     lick_counter = 0
                     self.spout.calculate_pulses(2, self.status)
-                    self.spout.send_continuous_pulse(self.status, self.spout.reward_pin)
+                    self.spout.send_continuous_pulse(self.status)
                     reward_counter += 1
         finally:
             self.end()
@@ -124,8 +124,3 @@ class PiTest:
         while self.start_time + time_limit > time.time():
             self.trigger.square_wave(self.status)
         self.end()
-
-
-
-
-

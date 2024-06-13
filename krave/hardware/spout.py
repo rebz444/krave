@@ -7,7 +7,8 @@ import numpy as np
 class Spout:
     def __init__(self, hardware_config, data_writer):
         self.data_writer = data_writer
-        self.lick_pin = hardware_config['spout']
+        self.lick_pin = hardware_config['lick']
+        self.lick_rolling = hardware_config['lick_rolling']  # roll lick records to avoid sensor flickering
         self.pump_pins = [hardware_config['pump'], hardware_config['pump_to_box']]
         # pin number used for reward, and pin number used to sync to NI box
         self.pump_pulse_to_turns = hardware_config['pump_pulse_to_turns']
@@ -29,20 +30,31 @@ class Spout:
         GPIO.setup(self.pump_pins, GPIO.OUT, initial=GPIO.LOW)
 
     def lick_status_check(self, status):
-        """register change only when current status is different than all two previous status"""
-        # self.lick_record = np.roll(self.lick_record, 1)
-        # self.lick_record[0] = GPIO.input(self.lick_pin)
-        # change_bool = np.all(self.lick_record != self.lick_status)
-        # change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
-        change = GPIO.input(self.lick_pin) - self.lick_status
-        self.lick_status += change
+        """
+        Checks for changes in lick sensor status and updates internal state.
+        Returns:
+            int: 1 if lick detected, -1 if lick stopped, 0 if no change.
+        """
+        if self.lick_rolling:
+            self.lick_record = np.roll(self.lick_record, 1)
+            self.lick_record[0] = GPIO.input(self.lick_pin)
+            change_bool = np.all(self.lick_record != self.lick_status)
+            change = 0 if not change_bool else 1 if self.lick_status == 0 else -1
+        else:
+            change = GPIO.input(self.lick_pin) - self.lick_status
 
+        self.lick_status += change
+        self.log_lick(status, change)
+
+        return change
+
+    def log_lick(self, status, change):
         if change == 1:
             self.data_writer.log(status + 'nan,1,lick')
         elif change == -1:
             self.data_writer.log(status + 'nan,0,lick')
-
-        return change
+        else:
+            pass
 
     def calculate_pulses(self, reward_size_ul, status):
         self.num_pulses = round(reward_size_ul / (self.ul_per_turn * self.pump_pulse_to_turns))
