@@ -5,11 +5,11 @@ import os
 print("RUNNING...")
 
 # Archivos de entrada y salida
-input_file = 'events_2024-06-11_11-06-27_RZ041.txt'
-output_file = 'test.csv'
+path_input_file = '/home/ricardo/krave/krave/ui/test_data/events_2024-06-11_11-06-27_RZ041.txt'
+path_output_file = '/home/ricardo/krave/krave/ui/test_data/test.csv'
 
 # Abrir el archivo de entrada y el archivo de salida
-with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+with open(path_input_file, 'r') as infile, open(path_output_file, 'w', newline='') as outfile:
     # Leer todas las líneas del archivo de entrada
     reader = infile.readlines()
     

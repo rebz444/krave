@@ -61,15 +61,15 @@ def analyze_data(data, index, initial_index, last_trial, total_trials):
     
     
 
-def plot_data(file_path, file_path2, img_path, directory_path):
+def plot_data(path_data_file, path_data_file2, path_img, path_resized_image):
     #This functions reads the file created with the analized data and plots it
     #Maybe more work on legend
 
     #load data
-    data = pd.read_csv(file_path, delimiter = ",")
+    data = pd.read_csv(path_data_file, delimiter = ",")
 
     #Get the name of the file with now extencion (ex: example.csv --> example)
-    file_name = os.path.splitext(os.path.basename(file_path2))[0]
+    file_name = os.path.splitext(os.path.basename(path_data_file2))[0]
 
     max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
 
@@ -113,25 +113,24 @@ def plot_data(file_path, file_path2, img_path, directory_path):
     #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
 
     try:
-        plt.savefig(img_path)
+        plt.savefig(path_img)
     except Exception as e:
         print(f"Error al guardar la imagen: {e}")
 
     #Resize image - PUEDE FALLAR
-    imagen = Image.open(img_path)
+    imagen = Image.open(path_img)
     nuevo_tamano = (450, 350) #width and height
     imagen_redimensionada = imagen.resize(nuevo_tamano)
 
     # Save image with new name
-    path_resized_image = os.path.join(directory_path, "graph_analyzed_data_resized.png")
     imagen_redimensionada.save(path_resized_image)
 
     
 
-def detect_change(file_path, time_last_mod):
+def detect_change(path_data_file, time_last_mod):
     #This functions detetcts if there has been a modification in the file with the date
 
-    time_mod = os.path.getmtime(file_path)
+    time_mod = os.path.getmtime(path_data_file)
     if (time_mod != time_last_mod):
         return True
     else:
@@ -140,27 +139,30 @@ def detect_change(file_path, time_last_mod):
 
 #INITIALIZATION
 
+#Paths
+path_real_time_analized_data = '/home/ricardo/krave/krave/ui/analized_data/real_time_analized_data.csv'
+path_img = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data.png'
+path_resized_image = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data_resized.png'
+
 #Get the file where the data is being written
 root = tk.Tk()
 root.withdraw()
-file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
+path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
 root.destroy()
 
-if not file_path:
+if not path_data_file:
     print("No se seleccionó ningún archivo.")
 
 #Get last odification date
-last_mod_time = os.path.getmtime(file_path)
-print(file_path)
+last_mod_time = os.path.getmtime(path_data_file)
+print(path_data_file)
 
-directory_path = os.path.abspath(__file__) #get the current directory
-directory_path = os.path.dirname(directory_path)
 #Indicate the name of the new file where the analized data will be written
 #Writte the heades of the new file
 new_headers = ["trial", "bg_repeat", "wait_time", "miss_trial"]
 new_file_name = "real_time_analized_data.csv"
-path_new_file = os.path.join(directory_path, new_file_name)
-with open(path_new_file, "w", newline="") as file:
+
+with open(path_real_time_analized_data, "w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(new_headers)
 
@@ -174,8 +176,6 @@ first_change = False
 num_rows = 2
 
 
-img_path = os.path.join(directory_path, "graph_analyzed_data.png") #we create the new path. CHANGE FOR NEW IMAGE NAME
-
 print("RUNNING...")
 
 #MAIN LOOP
@@ -188,17 +188,17 @@ while(last_trial <= 42 and index <= 3488):
     print(index, last_trial)
     time.sleep(5) #ADJUST TO SET THE REFRESH RATE OF THE GRAPH!!!
 
-    if detect_change(file_path, last_mod_time) == True:
+    if detect_change(path_data_file, last_mod_time) == True:
         if first_change != False:
             #print("----CHANGE DETECTED----")
 
             #Get new mod date
-            last_mod_time = os.path.getmtime(file_path)
+            last_mod_time = os.path.getmtime(path_data_file)
 
             #Load data, num of rows and diference from the index we are in and the num of rows
-            reader = csv.reader(open(file_path))
+            reader = csv.reader(open(path_data_file))
             num_rows = len(list(reader))
-            data = pd.read_csv(file_path, delimiter = ",")
+            data = pd.read_csv(path_data_file, delimiter = ",")
 
             diff = (num_rows - 2) - index #New rows added since last check
             #print("NUMBER OF ROWS:", num_rows, "DIFF:", diff)
@@ -218,26 +218,23 @@ while(last_trial <= 42 and index <= 3488):
                     if last_trial != -1:
 
                         #We add the new analized data to the file to plot
-                        with open(path_new_file, "a", newline="") as file:
+                        with open(path_real_time_analized_data, "a", newline="") as file:
                             writer = csv.writer(file)
                             writer.writerow(sortida)
                         
                         #We plot the data from the analized file
-                        directory_path = os.path.abspath(__file__) #get the current directory
-                        directory_path = os.path.dirname(directory_path)
-                        new_file_path = os.path.join(directory_path, "real_time_analized_data.csv")
-                        plot_data(path_new_file, file_path, img_path, directory_path)
+                        plot_data(path_real_time_analized_data, path_data_file, path_img, path_resized_image)
                     last_trial += 1
             
             index = new_index
 
         else:
             first_change = True
-            last_mod_time = os.path.getmtime(file_path)
+            last_mod_time = os.path.getmtime(path_data_file)
 
         index += 1
 
 #Final plot because why not :)
-plot_data(new_file_path, file_path, img_path, directory_path)
+plot_data(path_real_time_analized_data, path_data_file, path_img, path_resized_image)
 
-print("END - graph saved at ",img_path)
+print("END - graph saved at ",path_resized_image)
