@@ -61,7 +61,7 @@ def analyze_data(data, index, initial_index, last_trial, total_trials):
     
     
 
-def plot_data(file_path, file_path2, img_path):
+def plot_data(file_path, file_path2, img_path, directory_path):
     #This functions reads the file created with the analized data and plots it
     #Maybe more work on legend
 
@@ -123,7 +123,8 @@ def plot_data(file_path, file_path2, img_path):
     imagen_redimensionada = imagen.resize(nuevo_tamano)
 
     # Save image with new name
-    imagen_redimensionada.save('graph_analyzed_data_resized.png')
+    path_resized_image = os.path.join(directory_path, "graph_analyzed_data_resized.png")
+    imagen_redimensionada.save(path_resized_image)
 
     
 
@@ -150,12 +151,16 @@ if not file_path:
 
 #Get last odification date
 last_mod_time = os.path.getmtime(file_path)
+print(file_path)
 
+directory_path = os.path.abspath(__file__) #get the current directory
+directory_path = os.path.dirname(directory_path)
 #Indicate the name of the new file where the analized data will be written
 #Writte the heades of the new file
 new_headers = ["trial", "bg_repeat", "wait_time", "miss_trial"]
 new_file_name = "real_time_analized_data.csv"
-with open(new_file_name, "w", newline="") as file:
+path_new_file = os.path.join(directory_path, new_file_name)
+with open(path_new_file, "w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(new_headers)
 
@@ -168,8 +173,8 @@ initial_index = 1
 first_change = False
 num_rows = 2
 
-direcroty_path = os.getcwd() #get the current directory
-img_path = os.path.join(direcroty_path, "graph_analyzed_data.png") #we create the new path. CHANGE FOR NEW IMAGE NAME
+
+img_path = os.path.join(directory_path, "graph_analyzed_data.png") #we create the new path. CHANGE FOR NEW IMAGE NAME
 
 print("RUNNING...")
 
@@ -180,7 +185,7 @@ print("RUNNING...")
 #to plot the last trial when the doc is finished writting
 
 while(last_trial <= 42 and index <= 3488):
-    #print(index, last_trial)
+    print(index, last_trial)
     time.sleep(5) #ADJUST TO SET THE REFRESH RATE OF THE GRAPH!!!
 
     if detect_change(file_path, last_mod_time) == True:
@@ -213,14 +218,15 @@ while(last_trial <= 42 and index <= 3488):
                     if last_trial != -1:
 
                         #We add the new analized data to the file to plot
-                        with open(new_file_name, "a", newline="") as file:
+                        with open(path_new_file, "a", newline="") as file:
                             writer = csv.writer(file)
                             writer.writerow(sortida)
                         
                         #We plot the data from the analized file
-                        direcroty_path = os.getcwd() #get the current directory
-                        new_file_path = os.path.join(direcroty_path, "real_time_analized_data.csv")
-                        plot_data(new_file_path, file_path, img_path)
+                        directory_path = os.path.abspath(__file__) #get the current directory
+                        directory_path = os.path.dirname(directory_path)
+                        new_file_path = os.path.join(directory_path, "real_time_analized_data.csv")
+                        plot_data(path_new_file, file_path, img_path, directory_path)
                     last_trial += 1
             
             index = new_index
@@ -232,6 +238,6 @@ while(last_trial <= 42 and index <= 3488):
         index += 1
 
 #Final plot because why not :)
-plot_data(new_file_path, file_path, img_path)
+plot_data(new_file_path, file_path, img_path, directory_path)
 
 print("END - graph saved at ",img_path)
