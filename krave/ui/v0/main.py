@@ -3,9 +3,8 @@ import matplotlib.pyplot as plt
 #import numpy as np
 import pandas as pd
 from button_class import Button
-from graph_class import Graph
 from button_refresh_class import RefreshButton
-from colors_list import *
+from krave.ui.constants import Colors
 import tkinter as tk
 from tkinter import filedialog
 from button_select_data_class import SelectData
@@ -26,7 +25,7 @@ pygame.display.set_caption("HSL project")
 #FUNCTIONS
 
 def draw():
-    win.fill(WHITE)
+    win.fill(Colors.WHITE)
     #win.blit(graph, (WIDTH / 2 - (img_width / 2), 0))
     grafico.draw(win)
     buttonRefresh.draw("REFRESH", win)
@@ -50,8 +49,8 @@ def detect_change(file_path, time_last_mod):
         return False
 
 #OBJECTS
-buttonRefresh = RefreshButton(100,342,100,50, BLACK)
-buttonSelectData = SelectData(260,342,150,50, BLACK)
+buttonRefresh = RefreshButton(100,342,100,50, Colors.BLACK)
+buttonSelectData = SelectData(260,342,150,50, Colors.BLACK)
 
 #FIRST SELECTION OF DATA
 file_path = buttonSelectData.activate()
@@ -60,12 +59,8 @@ if not file_path:
 
 last_mod_time = os.path.getatime(file_path)
 
-#PONER ACTIVACIÓN PREVIA DEL OBJETO PARA CREAR GRÁFICO
-grafico = Graph(200, 0, file_path,normalice_color(BLACK))
-grafico.x = WIDTH // 2 - (grafico._img_width // 2) #Centrar grafico
-
 #MAIN LOOP
-win.fill(WHITE)
+win.fill(Colors.WHITE)
 run = True
 
 FPS = 15

@@ -1,37 +1,20 @@
 import pygame
 import matplotlib.pyplot as plt
-#import numpy as np
 import pandas as pd
 from button_class import Button
-from graph_class import Graph
+from krave.ui.v0.graph_class import Graph
 from button_refresh_class import RefreshButton
-from colors_list import *
+from krave.ui.constants import *
 import tkinter as tk
 from tkinter import filedialog
 from button_select_data_class import SelectData
 from threading import Thread
 import os
 import time
-import warnings
 import csv
 from PIL import Image
+import warnings
 
-#INITIALIZE PROYECT
-#Get the file where the data is being written
-root = tk.Tk()
-root.withdraw()
-path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
-root.destroy()
-
-if not path_data_file:
-    print("No se seleccionó ningún archivo.")
-
-pygame.init()
-WIDTH, HEIGHT = 500, 400
-win = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("HSL project")
-
-#FUNCTIONS
 #Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -203,59 +186,37 @@ def analisis():
             last_mod_time = os.path.getmtime(path_data_file)
 
         index += 1
-def draw():
-    win.fill(WHITE)
-    #win.blit(graph, (WIDTH / 2 - (img_width / 2), 0))
-    #grafico.draw(win)
-
-    imagen = pygame.image.load(path_resized_image)
-
-    win.blit(imagen, (25,0))
-
-    buttonRefresh.draw("REFRESH", win)
-    buttonSelectData.draw("SELECT FILE", win)
-    pygame.display.update()
-
-#creamos un threat para poder abrir una nueva ventana
-def get_path(button):
-    return buttonSelectData.activate()
 
 
-def normalice_color(color_rgb):
-    r, g, b = color_rgb
-    return (r / 255, g / 255, b / 255)
-
-
-#OBJECTS
-buttonRefresh = RefreshButton(100,342,100,50, BLACK)
-buttonSelectData = SelectData(260,342,150,50, BLACK)
-
-#FIRST SELECTION OF DATA
-
-
-#PONER ACTIVACIÓN PREVIA DEL OBJETO PARA CREAR GRÁFICO
-
-
-#MAIN LOOP
-
+#INITIALIZATION
 
 #Paths
 path_real_time_analized_data = '/home/ricardo/krave/krave/ui/analized_data/real_time_analized_data.csv'
 path_img = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data.png'
 path_resized_image = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data_resized.png'
 
+#Get the file where the data is being written
+root = tk.Tk()
+root.withdraw()
+path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
+root.destroy()
+
+if not path_data_file:
+    print("No se seleccionó ningún archivo.")
+
+#Get last odification date
+print(path_data_file)
+
+#Indicate the name of the new file where the analized data will be written
+#Writte the heades of the new file
 new_headers = ["trial", "bg_repeat", "wait_time", "miss_trial"]
+new_file_name = "real_time_analized_data.csv"
+
 with open(path_real_time_analized_data, "w", newline="") as file:
     writer = csv.writer(file)
     writer.writerow(new_headers)
 
-win.fill(WHITE)
-run = True
-
-FPS = 15
-proceso = False #Para comprovar si ha acabado el hilo y que no se ponga a imprimir todo el rato que no hay archivo
-clock = pygame.time.Clock()
-
+#Initialice variables
 index = 0
 total_trials = 42
 new_rows = []
@@ -266,19 +227,24 @@ num_rows = 2
 last_mod_time = os.path.getmtime(path_data_file)
 start_time = time.time()
 
-while run:
+print("RUNNING...")
+
+#MAIN LOOP
+#For this initial testing we need to indicate the number of index and the number of trials
+#But for the final one we will wait for one function to say that we ended writting the file
+#Now it does not graph the last trial bcs it can't detect it finished. Needed implementation
+#to plot the last trial when the doc is finished writting
+
+while(last_trial <= 42 and index <= 3488):
     current_time = time.time()
-    diff_time = current_time - start_time
+    diff_time = start_time - current_time
+
     if diff_time >= 5:
         start_time = time.time()
         analisis()
 
-    clock.tick(FPS)
-    
-    draw()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
+#Final plot because why not :)
+plot_data(path_real_time_analized_data, path_data_file, path_img, path_resized_image)
 
-pygame.quit()
+print("END - graph saved at ",path_resized_image)

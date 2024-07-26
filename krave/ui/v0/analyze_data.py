@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 #import numpy as np
 import pandas as pd
 from button_class import Button
-from graph_class import Graph
+from krave.ui.debugging.graph_class import Graph
 from button_refresh_class import RefreshButton
-from colors_list import *
+from krave.ui.constants import *
 import tkinter as tk
 from tkinter import filedialog
 from button_select_data_class import SelectData

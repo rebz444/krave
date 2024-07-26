@@ -1,5 +1,5 @@
 import pygame
-from colors_list import *
+from krave.ui.constants import Colors
 
 class Button(object):
      def __init__(self, x,y,width,height, color):
@@ -57,7 +57,7 @@ class Button(object):
      
      def display_text(self, in_text, win):
         self._WORD_FONT = pygame.font.SysFont('comicsans', self.width // len(in_text))
-        text = self._WORD_FONT.render(in_text, 1, WHITE)
+        text = self._WORD_FONT.render(in_text, 1, Colors.WHITE)
         text_rect = text.get_rect(center=(self._x + self._width / 2, self._y + self._height / 2))
         win.blit(text, text_rect.topleft)
 
