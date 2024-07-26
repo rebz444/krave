@@ -2,12 +2,10 @@ import pygame
 import matplotlib.pyplot as plt
 #import numpy as np
 import pandas as pd
-from button_class import Button
-from button_refresh_class import RefreshButton
-from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
+#from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
+from constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
 import tkinter as tk
 from tkinter import filedialog
-from button_select_data_class import SelectData
 from threading import Thread
 import os
 import time
@@ -35,7 +33,7 @@ class UI():
         self._last_mod_time = None
 
     def _prompt_for_data_file(self):
-        """Ask user to provide path to the data file."""
+        """Ask user to provide path to the data file. Always before initializing pygame"""
         root = tk.Tk()
         root.withdraw()
         self._source_data_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
@@ -46,7 +44,7 @@ class UI():
         return self._source_data_path
 
     def _init_pygame(self):
-        """"""
+        """initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
             pygame.init()
             WIDTH, HEIGHT = 500, 400
@@ -56,17 +54,18 @@ class UI():
             self._pygame_window.fill(Colors.WHITE)
     
     def _quit_pygame(self):
+        """end pygame and krave"""
         pygame.quit()
     
     def _init_analyzed_data_file(self):
-        """"""
+        """create real_time_analized_data.csv file and place headers (to store analized data)"""
         new_headers = [DATA_HEADERS.TRIAL, DATA_HEADERS.BG_REPEAT, DATA_HEADERS.WAIT_TIME, DATA_HEADERS.MISS_TRIAL]
         with open(PATHS.TEMP_ANALYZED_DATA, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(new_headers)
     
     def _init_ui_loop_parameters(self):
-        """"""
+        """initialize variables for check_for_data_update function in the main loop"""
         self._index = 0
         self._last_trial = -1
         self._initial_index = 1
@@ -76,7 +75,7 @@ class UI():
         self._total_trials = 42
     
     def _check_pygame_quit_event(self):
-        """"""
+        """check for events in pygame to quit the main loop and end program"""
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return False
@@ -87,10 +86,10 @@ class UI():
         Maybe more work on legend"""
 
         #load data
-        data = pd.read_csv(self._source_data_path, delimiter = ",")
+        data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
 
         #Get the name of the file with now extencion (ex: example.csv --> example)
-        file_name = os.path.splitext(os.path.basename(self._source_data_path2))[0]
+        file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
 
         max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
 
@@ -147,14 +146,16 @@ class UI():
         imagen_redimensionada.save(PATHS.TEMP_IMG_RESIZED)
     
     def draw(self):
-        """"""
+        """loads graph image and draws elements in the pygame window"""
         self._pygame_window.fill(Colors.WHITE)
         img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
         self._pygame_window.blit(img, (25,0))
         pygame.display.update()
     
     def check_for_data_update(self):
-        """"""
+        """check for updates in the self._source_data_path file and if there is an update it analizes the new rows of the file,
+        copies the new analized data to the TEMP_ANALIZED_DATA file and plots with this file. Skip first modification (headers) 
+        and trial -1 is not ploted or saved in the TEMP_ANALIZED_DATA file"""
 
         print(self._index, self._last_trial)
 
@@ -172,13 +173,15 @@ class UI():
                 diff = (num_rows - 2) - self._index #New rows added since last check
                 #print("NUMBER OF ROWS:", num_rows, "DIFF:", diff)
 
+                sortida = None
+
                 #Iterate throught all the new rows
                 for i in range(diff):
                     new_index = self._index + 1 + i
                     #print("NEW INDEX: ", new_index)
                     sortida = analyze_data(data, new_index, self._initial_index, self._last_trial)
 
-                    if sortida != False:
+                    if sortida:
                         #print("OUTPUT: ", sortida)
                         self._initial_index = new_index
 
@@ -191,7 +194,7 @@ class UI():
                                 writer.writerow(sortida)
                             
                             #We plot the data from the analized file
-                            self.plot_data(PATHS.TEMP_ANALYZED_DATA, self._source_data_path, PATHS.TEMP_IMG, PATHS.TEMP_IMG_RESIZED)
+                            self.plot_data()
                         self._last_trial += 1
                 
                 self._index = new_index
@@ -228,8 +231,8 @@ class UI():
 
 #FUNCTIONS
 def analyze_data(data, index, initial_index, last_trial):
-    #In this function we check if we started a new trial (with the actual row)
-    #if we started one then we check if it's a miss trial, the wait time and the backgrounds
+    '''check in the self._source_data_path in the index row if we start a new trial. 
+    if we started one then we check if it's a miss trial, the wait time and the backgrounds  '''
 
     actual_row = data.iloc[index]
     actual_trial = actual_row[3]
@@ -262,10 +265,6 @@ def analyze_data(data, index, initial_index, last_trial):
                 miss_trial = True
         return([last_trial, number_background, wait_time, miss_trial])
 
-    else:
-
-        return (False)
-
 def detect_change(source_data_path, time_last_mod):
     """This functions detetcts if there has been a modification in the file with the date"""
     time_mod = os.path.getmtime(source_data_path)
@@ -274,4 +273,5 @@ def detect_change(source_data_path, time_last_mod):
     return False
 
 if __name__ == '__main__':
+    '''runs only if direclty executed, no execution if imported (then you need to call main())'''
     UI().run()
