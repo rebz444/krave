@@ -15,24 +15,7 @@ import warnings
 import csv
 from PIL import Image
 
-#INITIALIZE PROYECT
-#Get the file where the data is being written
-root = tk.Tk()
-root.withdraw()
-path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
-root.destroy()
 
-if not path_data_file:
-    print("No se seleccionó ningún archivo.")
-
-pygame.init()
-WIDTH, HEIGHT = 500, 400
-win = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("HSL project")
-
-#FUNCTIONS
-#Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
-warnings.simplefilter(action="ignore", category=FutureWarning)
 
 #FUNCTIONS
 def analyze_data(data, index, initial_index, last_trial, total_trials):
@@ -202,6 +185,7 @@ def analisis():
             last_mod_time = os.path.getmtime(path_data_file)
 
         index += 1
+
 def draw():
     win.fill(Colors.WHITE)
     #win.blit(graph, (WIDTH / 2 - (img_width / 2), 0))
@@ -225,6 +209,24 @@ def normalice_color(color_rgb):
     return (r / 255, g / 255, b / 255)
 
 def main():
+    #INITIALIZE PROYECT
+    #Get the file where the data is being written
+    root = tk.Tk()
+    root.withdraw()
+    path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
+    root.destroy()
+
+    if not path_data_file:
+        print("No se seleccionó ningún archivo.")
+
+    pygame.init()
+    WIDTH, HEIGHT = 500, 400
+    win = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("HSL project")
+
+    #FUNCTIONS
+    #Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
+    warnings.simplefilter(action="ignore", category=FutureWarning)
     #Paths
     path_real_time_analized_data = '/home/ricardo/krave/krave/ui/analized_data/real_time_analized_data.csv'
     path_img = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data.png'
