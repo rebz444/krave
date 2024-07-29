@@ -1,9 +1,7 @@
 import pygame
 import matplotlib.pyplot as plt
-#import numpy as np
 import pandas as pd
-#from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
-from constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
+from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
 import tkinter as tk
 from tkinter import filedialog
 from threading import Thread
@@ -13,7 +11,7 @@ import warnings
 #Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
 warnings.simplefilter(action="ignore", category=FutureWarning)
 import csv
-from PIL import Image
+from PIL import Image 
 
 
 class UI():
@@ -31,6 +29,7 @@ class UI():
         self._initial_index = None
         self._first_change = None
         self._last_mod_time = None
+        self._num_rows = None
 
     def _prompt_for_data_file(self):
         """Ask user to provide path to the data file. Always before initializing pygame"""
@@ -44,28 +43,28 @@ class UI():
         return self._source_data_path
 
     def _init_pygame(self):
-        """initialize pygame (we check if we have already created it)"""
+        """Initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
             pygame.init()
             WIDTH, HEIGHT = 500, 400
             self._pygame_window = pygame.display.set_mode((WIDTH, HEIGHT))
             self._pygame_clock = pygame.time.Clock()
-            pygame.display.set_caption("HSL project")
+            pygame.display.set_caption("UI")
             self._pygame_window.fill(Colors.WHITE)
     
     def _quit_pygame(self):
-        """end pygame and krave"""
+        """End pygame and krave"""
         pygame.quit()
     
     def _init_analyzed_data_file(self):
-        """create real_time_analized_data.csv file and place headers (to store analized data)"""
+        """Create real_time_analized_data.csv file and place headers (to store analized data)"""
         new_headers = [DATA_HEADERS.TRIAL, DATA_HEADERS.BG_REPEAT, DATA_HEADERS.WAIT_TIME, DATA_HEADERS.MISS_TRIAL]
         with open(PATHS.TEMP_ANALYZED_DATA, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(new_headers)
     
     def _init_ui_loop_parameters(self):
-        """initialize variables for check_for_data_update function in the main loop"""
+        """Initialize variables for check_for_data_update function in the main loop"""
         self._index = 0
         self._last_trial = -1
         self._initial_index = 1
@@ -75,7 +74,7 @@ class UI():
         self._total_trials = 42
     
     def _check_pygame_quit_event(self):
-        """check for events in pygame to quit the main loop and end program"""
+        """Check for events in pygame to quit the main loop and end program"""
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return False
@@ -129,7 +128,7 @@ class UI():
         #AND WE ASIGN A LABEL (currenly disablabled, not working the position)
         plt.plot([],[], color = "black", label = "wait time")
         plt.plot([],[], color = "lightseagreen", label = "bg repeat", )
-        #plt.subplots_adjust(right=0.75) #Margen al exterior del grafico (se comprime el grafico :|)
+        #plt.subplots_adjust(right=0.75) #Edge in the outside of the graph (problem -- graph compressed)
         #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
 
         try:
@@ -137,7 +136,7 @@ class UI():
         except Exception as e:
             print(f"Error al guardar la imagen: {e}")
 
-        #Resize image - PUEDE FALLAR
+        #Resize image
         imagen = Image.open(PATHS.TEMP_IMG)
         nuevo_tamano = (450, 350) #width and height
         imagen_redimensionada = imagen.resize(nuevo_tamano)
@@ -146,52 +145,53 @@ class UI():
         imagen_redimensionada.save(PATHS.TEMP_IMG_RESIZED)
     
     def draw(self):
-        """loads graph image and draws elements in the pygame window"""
+        """Loads graph image and draws elements in the pygame window"""
         self._pygame_window.fill(Colors.WHITE)
         img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
         self._pygame_window.blit(img, (25,0))
         pygame.display.update()
     
+    def read_data_file_csv(self):
+        reader = csv.reader(open(self._source_data_path))
+        self._num_rows = len(list(reader))
+        data = pd.read_csv(self._source_data_path, delimiter = ",")
+        return data
+    
+    def write_TEMP_ANALYZED_DATA_csv(self, output_analyzed_data):
+        with open(PATHS.TEMP_ANALYZED_DATA, "a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(output_analyzed_data)
+
     def check_for_data_update(self):
-        """check for updates in the self._source_data_path file and if there is an update it analizes the new rows of the file,
+        """Check for updates in the self._source_data_path file and if there is an update it analizes the new rows of the file,
         copies the new analized data to the TEMP_ANALIZED_DATA file and plots with this file. Skip first modification (headers) 
         and trial -1 is not ploted or saved in the TEMP_ANALIZED_DATA file"""
 
-        print(self._index, self._last_trial)
 
         if detect_change(self._source_data_path, self._last_mod_time):
-            if self._first_change != False:
-                print("----CHANGE DETECTED----")
+            """we do not analyze the the first change because it is the headers creation and that is not data to analyze (otherwise error)"""
+            if self._first_change:
                 #Get new mod date
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
 
                 #Load data, num of rows and diference from the index we are in and the num of rows
-                reader = csv.reader(open(self._source_data_path))
-                num_rows = len(list(reader))
-                data = pd.read_csv(self._source_data_path, delimiter = ",")
+                data = self.read_data_file_csv()
 
-                diff = (num_rows - 2) - self._index #New rows added since last check
-                #print("NUMBER OF ROWS:", num_rows, "DIFF:", diff)
-
-                sortida = None
+                diff = (self._num_rows - 2) - self._index #New rows added since last check
 
                 #Iterate throught all the new rows
                 for i in range(diff):
                     new_index = self._index + 1 + i
-                    #print("NEW INDEX: ", new_index)
-                    sortida = analyze_data(data, new_index, self._initial_index, self._last_trial)
+                    output_analyzed_data = analyze_data(data, new_index, self._initial_index, self._last_trial)
 
-                    if sortida:
-                        #print("OUTPUT: ", sortida)
+                    if output_analyzed_data:
                         self._initial_index = new_index
 
                         #We dont want to plot the trial -1 (isnt a real trial) 
                         if self._last_trial != -1:
 
                             #We add the new analized data to the file to plot
-                            with open(PATHS.TEMP_ANALYZED_DATA, "a", newline="") as file:
-                                writer = csv.writer(file)
-                                writer.writerow(sortida)
+                            self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
                             
                             #We plot the data from the analized file
                             self.plot_data()
@@ -231,8 +231,8 @@ class UI():
 
 #FUNCTIONS
 def analyze_data(data, index, initial_index, last_trial):
-    '''check in the self._source_data_path in the index row if we start a new trial. 
-    if we started one then we check if it's a miss trial, the wait time and the backgrounds  '''
+    """check in the self._source_data_path in the index row if we start a new trial. 
+    if we started one then we check if it's a miss trial, the wait time and the backgrounds"""
 
     actual_row = data.iloc[index]
     actual_trial = actual_row[3]
@@ -273,5 +273,5 @@ def detect_change(source_data_path, time_last_mod):
     return False
 
 if __name__ == '__main__':
-    '''runs only if direclty executed, no execution if imported (then you need to call main())'''
+    '''Runs only if direclty executed, no execution if imported (then you need to call main())'''
     UI().run()
