@@ -209,8 +209,18 @@ class UI():
     def run(self):
         """Run main UI thread."""
 
-        events_path = os.path.join(DataWriter.data_write_path, DataWriter.events_name)
-        self._source_data_path = events_path
+        #events_path = os.path.join(DataWriter.data_write_path, DataWriter.events_name)
+        #self._source_data_path = DataWriter.events_path
+
+        test_path = "/home/pi/communication.txt"
+
+        with open(test_path, "r") as file:
+            self._source_data_path = file.read()
+
+        if os.path.exists(test_path):
+            os.remove(test_path)
+        else:
+            print("File doesn't exists")
 
         if not self._source_data_path:
             self._source_data_path = self._prompt_for_data_file()
