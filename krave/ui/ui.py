@@ -227,6 +227,8 @@ class UI():
             self.draw()
             run = self._check_pygame_quit_event()
 
+            
+
         self._quit_pygame()
 
 #FUNCTIONS
