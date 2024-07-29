@@ -2,6 +2,7 @@ import pygame
 import matplotlib.pyplot as plt
 import pandas as pd
 from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
+from krave.output.data_writer import DataWriter
 import tkinter as tk
 from tkinter import filedialog
 from threading import Thread
@@ -207,6 +208,10 @@ class UI():
 
     def run(self):
         """Run main UI thread."""
+
+        events_path = os.path.join(DataWriter.data_write_path, DataWriter.events_name)
+        self._source_data_path = events_path
+
         if not self._source_data_path:
             self._source_data_path = self._prompt_for_data_file()
         self._init_pygame()
@@ -227,7 +232,7 @@ class UI():
             self.draw()
             run = self._check_pygame_quit_event()
 
-            
+
 
         self._quit_pygame()
 

@@ -10,9 +10,9 @@ class Colors:
     L_BLUE = (65, 105, 225) # 9
 
 class PATHS:
-    TEMP_ANALYZED_DATA = '/home/ricardo/krave/krave/ui/analized_data/real_time_analized_data.csv'
-    TEMP_IMG = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data.png'
-    TEMP_IMG_RESIZED = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data_resized.png' 
+    TEMP_ANALYZED_DATA = '/home/pi/real_time_analized_data.csv'
+    TEMP_IMG = '/home/pi/graph_analyzed_data.png'
+    TEMP_IMG_RESIZED = '/home/pi/graph_analyzed_data_resized.png' 
 
 class DATA_HEADERS:
     TRIAL = "trial"
