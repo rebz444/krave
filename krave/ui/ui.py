@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
 from krave.output.data_writer import DataWriter
+from krave.ui.button_start_class import StartButton
 import tkinter as tk
 from tkinter import filedialog
 from threading import Thread
@@ -70,13 +71,19 @@ class UI():
         self._last_trial = -1
         self._initial_index = 1
         self._first_change = False
-        self._last_mod_time = os.path.getmtime(self._source_data_path)
+        self._last_mod_time = None
         # TODO(r.hueto@icloud.com): Remove total_trials when connected with main krave loop.
         self._total_trials = 42
     
     def _check_pygame_quit_event(self):
         """Check for events in pygame to quit the main loop and end program"""
         for event in pygame.event.get():
+                if pygame.mouse.get_pressed()[0]:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                    if self.buttonStart.pressed(mouse_x,mouse_y):
+                        self.buttonStart.activate()
+                
                 if event.type == pygame.QUIT:
                     return False
         return True
@@ -148,8 +155,11 @@ class UI():
     def draw(self):
         """Loads graph image and draws elements in the pygame window"""
         self._pygame_window.fill(Colors.WHITE)
-        img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
-        self._pygame_window.blit(img, (25,0))
+        if self.buttonStart.activated:
+            img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
+            self._pygame_window.blit(img, (25,0))
+        self.buttonStart.draw("START", self._pygame_window)
+
         pygame.display.update()
     
     def read_data_file_csv(self):
@@ -209,21 +219,8 @@ class UI():
     def run(self):
         """Run main UI thread."""
 
-        #events_path = os.path.join(DataWriter.data_write_path, DataWriter.events_name)
-        #self._source_data_path = DataWriter.events_path
-
-        test_path = "/home/pi/communication.txt"
-
-        with open(test_path, "r") as file:
-            self._source_data_path = file.read()
-
-        if os.path.exists(test_path):
-            os.remove(test_path)
-        else:
-            print("File doesn't exists")
-
-        if not self._source_data_path:
-            self._source_data_path = self._prompt_for_data_file()
+        self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
+        
         self._init_pygame()
         self._init_analyzed_data_file()
         self._init_ui_loop_parameters()
@@ -232,18 +229,24 @@ class UI():
         start_time = time.time()
         while run:
             # Run UI update every {update_time_seconds} seconds.
-            current_time = time.time()
-            diff_time = current_time - start_time
-            if diff_time >= self._update_time_seconds:
-                start_time = time.time()
-                self.check_for_data_update()
+            if self.buttonStart.activated:
+                current_time = time.time()
+                diff_time = current_time - start_time
+                if diff_time >= self._update_time_seconds:
+                    start_time = time.time()
+                    self.check_for_data_update()
 
             self._pygame_clock.tick(self._FPS)
             self.draw()
             run = self._check_pygame_quit_event()
 
 
-
+        pid = self.buttonStart.RUN_TASK.pid
+        if self.buttonStart.RUN_TASK.poll() is None:
+            print("Ending process...")
+            self.buttonStart.RUN_TASK.terminate()
+            self.buttonStart.RUN_TASK.wait()
+            print("Process ended")
         self._quit_pygame()
 
 #FUNCTIONS

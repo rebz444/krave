@@ -8,6 +8,9 @@ class Button(object):
           self._width = width
           self._height = height
           self._color = color
+          self.activated = False
+
+          pygame.font.init()
           self._LETTER_FONT = pygame.font.SysFont('comicsans', 20)
           self._WORD_FONT = pygame.font.SysFont('comicsans', 30 - self.width //7)
           self._TITLE_FONT = pygame.font.SysFont('comicsans', 50)

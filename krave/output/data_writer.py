@@ -63,11 +63,6 @@ class DataWriter:
         data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'
         self.events.write(data_fields + '\n')
 
-        test_path = "/home/pi/communication.txt"
-
-        with open(test_path, "a") as file:
-            file.write(events_path)
-
     def log(self, string):
         new_line = str(time.time()) + ',' + string + '\n'
         self.events.write(new_line)
@@ -112,4 +107,4 @@ class DataWriter:
         else:
             print(f'Files saved locally at {self.data_write_path}')
 
-        #self.post_on_slack()
+        self.post_on_slack()
