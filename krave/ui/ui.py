@@ -48,6 +48,7 @@ class UI():
     def _init_pygame(self):
         """Initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "524,0"
             pygame.init()
             WIDTH, HEIGHT = 500, 400
             self._pygame_window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -92,7 +93,7 @@ class UI():
                     return False
         return True
 
-    def plot_data(self):
+    def plot_data(self, end = False):
         """This functions reads the file created with the analized data and plots it
         Maybe more work on legend"""
 
@@ -157,6 +158,10 @@ class UI():
 
         # Save image with new name
         imagen_redimensionada.save(PATHS.TEMP_IMG_RESIZED)
+        
+        if end:
+            FINAL_IMG = os.path.join(os.path.dirname(self._source_data_path), "graph.png")
+            imagen_redimensionada.save(FINAL_IMG)
     
     def draw(self):
         """Loads graph image and draws elements in the pygame window"""
@@ -231,11 +236,11 @@ class UI():
             with open(PATHS.COMMUNICATION, "r") as file:
                 stop = file.read()
 
-            if stop:
+            if stop == "True":
                 print('----STOP FROM UI----')
                 os.remove(PATHS.COMMUNICATION)
-                return True
-        return False
+                return False
+        return True
         
 
         
@@ -264,7 +269,9 @@ class UI():
             self._pygame_clock.tick(self._FPS)
             self.draw()
             run = self._check_pygame_quit_event()
-            run = self.check_running()
+            
+            if run:
+                run = self.check_running()
 
 
         pid = self.buttonStart.RUN_TASK.pid
@@ -273,6 +280,7 @@ class UI():
             self.buttonStart.RUN_TASK.terminate()
             self.buttonStart.RUN_TASK.wait()
             print("Process ended")
+        self.plot_data(end = True)
         self._quit_pygame()
 
 #FUNCTIONS
