@@ -20,3 +20,5 @@ class StartButton(Button):
         else:
             print("File doesn't exists")
 
+        return self._source_data_path
+

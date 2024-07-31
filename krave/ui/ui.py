@@ -4,6 +4,7 @@ import pandas as pd
 from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
 from krave.output.data_writer import DataWriter
 from krave.ui.button_start_class import StartButton
+from krave.ui.button_stop_class import StopButton
 import tkinter as tk
 from tkinter import filedialog
 from threading import Thread
@@ -81,8 +82,11 @@ class UI():
                 if pygame.mouse.get_pressed()[0]:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
 
-                    if self.buttonStart.pressed(mouse_x,mouse_y):
-                        self.buttonStart.activate()
+                    if self.buttonStop.pressed(mouse_x,mouse_y) and self.buttonStart.activated:
+                        return self.buttonStop.activate()
+                    
+                    if self.buttonStart.pressed(mouse_x,mouse_y) and self.buttonStart.activated == False:
+                        self._source_data_path = self.buttonStart.activate()
                 
                 if event.type == pygame.QUIT:
                     return False
@@ -91,6 +95,8 @@ class UI():
     def plot_data(self):
         """This functions reads the file created with the analized data and plots it
         Maybe more work on legend"""
+
+        plt.clf()
 
         #load data
         data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
@@ -111,8 +117,8 @@ class UI():
             max_wait_time = max(max_wait_time, row[DATA_HEADERS.WAIT_TIME])
         
         #we get all the data that is not a miss trial and plot it with lines (it also joins the space of miss trials, maybe review)
-        false_data = data[data[DATA_HEADERS.MISS_TRIAL] == False] 
-        plt.plot(false_data[DATA_HEADERS.TRIAL], false_data[DATA_HEADERS.WAIT_TIME], '-', color='gray', alpha=0.5)
+        #false_data = data[data[DATA_HEADERS.MISS_TRIAL] == False] 
+        #plt.plot(false_data[DATA_HEADERS.TRIAL], false_data[DATA_HEADERS.WAIT_TIME], '-', color='gray', alpha=0.5)
 
         #we get the different heights to create the top numbres (bg repeat)
         h1 = max_wait_time + (max_wait_time / 100 * 10)
@@ -158,7 +164,11 @@ class UI():
         if self.buttonStart.activated:
             img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
             self._pygame_window.blit(img, (25,0))
-        self.buttonStart.draw("START", self._pygame_window)
+        
+        if (self.buttonStart.activated == False):
+            self.buttonStart.draw("START", self._pygame_window)
+        else:
+            self.buttonStop.draw("STOP", self._pygame_window)
 
         pygame.display.update()
     
@@ -220,6 +230,7 @@ class UI():
         """Run main UI thread."""
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
+        self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
         
         self._init_pygame()
         self._init_analyzed_data_file()
