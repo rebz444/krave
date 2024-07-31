@@ -5,7 +5,4 @@ if __name__ == '__main__':
     Task(mouse="test",
          rig_name="rig1",
          training="regular",
-         trainer="Rebekah",
-         record=True).run()
-
-
+         trainer="Rebekah").run()

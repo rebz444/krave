@@ -32,3 +32,6 @@ class CameraBasler:
     def shutdown(self):
         for pin in self.camera_pins:
             GPIO.output(pin, GPIO.LOW)
+
+
+

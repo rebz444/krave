@@ -119,8 +119,12 @@ class PiTest:
         finally:
             self.end()
 
-    def test_trigger(self, time_limit=200):
+    def test_trigger(self, time_limit=20):
         """tests square wave"""
         while self.start_time + time_limit > time.time():
             self.trigger.square_wave(self.status)
         self.end()
+
+
+if __name__ == '__main__':
+    PiTest("rig1").test_trigger()

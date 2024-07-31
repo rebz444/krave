@@ -1,7 +1,7 @@
 {
   "max_trials": 9000,
   "max_time": 27000,
-  "max_reward": 900,
+  "max_reward": 700,
   "max_missed_trial": 5,
   "max_blocks": 1,
   "block_length_range": 30,

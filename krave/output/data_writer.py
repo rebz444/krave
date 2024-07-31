@@ -108,4 +108,3 @@ class DataWriter:
             print(f'Files saved locally at {self.data_write_path}')
 
         self.post_on_slack()
-        print(self.session_config['mouse'], session_data)

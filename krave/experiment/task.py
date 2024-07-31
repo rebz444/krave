@@ -107,6 +107,7 @@ class Task:
             'avg_tw': avg_tw,
             'ending_code': self.ending_code
                         }
+        print(self.session_config['mouse'], session_data)
         self.data_writer.end(session_data)
 
     def start_block(self):
