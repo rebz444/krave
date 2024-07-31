@@ -4,7 +4,7 @@ from krave.experiment.task import Task
 #Testing
 if __name__ == '__main__':
     Task(mouse="test",
-         rig_name="rig2",
+         rig_name="rig3",
          training="regular",
          trainer="Rebekah",
          record=True,

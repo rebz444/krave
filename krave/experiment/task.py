@@ -114,7 +114,7 @@ class Task:
         self.data_writer.end(session_data)
 
         with open(PATHS.COMMUNICATION, 'a') as file:
-            file.write(True)
+            file.write('True')
 
     def start_block(self):
         """
@@ -269,8 +269,6 @@ class Task:
                 self.ending_code = "pygame"
 
     def run(self):
-        cont = 0
-
         self.start_session()
         while self.running:
             if self.session_config['record']:
@@ -280,7 +278,6 @@ class Task:
             self.handle_pygame_events()
 
             if self.state == states.IN_BACKGROUND:
-                cont += 1
                 self.handle_background_events()
 
             if self.state == states.IN_WAIT:
@@ -288,11 +285,7 @@ class Task:
 
             if self.state == states.IN_CONSUMPTION:
                 self.handle_consumption_events()
-            
-            if cont >= 10:
-                print('----STOP FROM TASK---')
-                break
 
-        if not self.running or cont >= 10:
+        if not self.running:
             self.end_session()
 
