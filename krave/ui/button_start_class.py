@@ -12,11 +12,11 @@ class StartButton(Button):
 
         time.sleep(5)
 
-        with open(PATHS.INITIAL_COMMUNICATION, "r") as file:
+        with open(PATHS.COMMUNICATION, "r") as file:
             self._source_data_path = file.read()
 
-        if os.path.exists(PATHS.INITIAL_COMMUNICATION):
-            os.remove(PATHS.INITIAL_COMMUNICATION)
+        if os.path.exists(PATHS.COMMUNICATION):
+            os.remove(PATHS.COMMUNICATION)
         else:
             print("File doesn't exists")
 

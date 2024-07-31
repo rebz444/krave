@@ -225,6 +225,20 @@ class UI():
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
 
             self._index += 1
+    
+    def check_running(self):
+        if os.path.exists(PATHS.COMMUNICATION):
+            with open(PATHS.COMMUNICATION, "r") as file:
+                stop = file.read()
+
+            if stop:
+                print('----STOP FROM UI----')
+                os.remove(PATHS.COMMUNICATION)
+                return True
+        return False
+        
+
+        
 
     def run(self):
         """Run main UI thread."""
@@ -250,6 +264,7 @@ class UI():
             self._pygame_clock.tick(self._FPS)
             self.draw()
             run = self._check_pygame_quit_event()
+            run = self.check_running()
 
 
         pid = self.buttonStart.RUN_TASK.pid

@@ -62,7 +62,7 @@ class DataWriter:
     def make_events(self):
         events_path = os.path.join(self.data_write_path, self.events_name)
 
-        with open(PATHS.INITIAL_COMMUNICATION, 'a') as file:
+        with open(PATHS.COMMUNICATION, 'a') as file:
             file.write(events_path)
 
         self.events = open(events_path, 'w')
