@@ -18,7 +18,8 @@ import RPi.GPIO as GPIO
 class Task:
     def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
         # experiment information
-        self.exp_name = utils.get_exp_name(mouse)
+        #self.exp_name = utils.get_exp_name(mouse)
+        self.exp_name = 'exp2_short'
 
         self.session_config = {"mouse": mouse, "exp": self.exp_name, "training": training, "rig": rig_name,
                                "trainer": trainer, "record": record, "forward_file": forward_file}
@@ -36,7 +37,7 @@ class Task:
         self.visual = Visual(self.data_writer)
         self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
-        self.camera = CameraPi()
+        #self.camera = CameraPi()
         self.sound = Sound()
 
         # session variables
@@ -75,8 +76,8 @@ class Task:
 
     def start_session(self):
         """starts camera for 20 sec to adjust position of the mouse before starting session"""
-        self.camera.on()
-        input(f"running {self.exp_name}, press Enter to start session ..")
+        #self.camera.on()
+        #input(f"running {self.exp_name}, press Enter to start session ..")
 
         self.running = True
         self.session_start_time = time.time()
@@ -91,7 +92,7 @@ class Task:
 
         self.visual.shutdown(self.status())
         self.spout.shutdown()
-        self.camera.shutdown()
+        #self.camera.shutdown()
         self.trigger.shutdown()
         GPIO.cleanup()
         print("GPIO cleaned up")
