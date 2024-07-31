@@ -73,6 +73,9 @@ class DataWriter:
         new_line = str(time.time()) + ',' + string + '\n'
         self.events.write(new_line)
 
+        self.events.flush()
+        os.fsync(self.events.fileno())
+
     def send_dir(self):
         pc_ip = self.data_writer_config['pc_ip']
         pc_username = self.data_writer_config['pc_username']
@@ -113,4 +116,4 @@ class DataWriter:
         else:
             print(f'Files saved locally at {self.data_write_path}')
 
-        self.post_on_slack()
+        #self.post_on_slack()
