@@ -1,26 +1,269 @@
 import pygame
 import matplotlib.pyplot as plt
-#import numpy as np
 import pandas as pd
-from button_class import Button
-from button_refresh_class import RefreshButton
-from krave.ui.constants import Colors
+from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
+from krave.output.data_writer import DataWriter
+from krave.ui.button_start_class import StartButton
+from krave.ui.button_stop_class import StopButton
 import tkinter as tk
 from tkinter import filedialog
-from button_select_data_class import SelectData
 from threading import Thread
 import os
 import time
 import warnings
+#Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
+warnings.simplefilter(action="ignore", category=FutureWarning)
 import csv
-from PIL import Image
+from PIL import Image 
 
 
+class UI():
+    """Object to run a UI for a mouse experiment."""
+    def __init__(self, source_data_path = None, fps = DEFAULT_FPS, update_time_seconds = DEFAULT_UPDATE_TIME_SECONDS) -> None:
+        self._source_data_path = source_data_path
+        self._pygame_window = None
+        self._pygame_clock = None
+        self._FPS = fps
+        self._update_time_seconds = update_time_seconds
+
+        # UI Loop parameters
+        self._index = None
+        self._last_trial = None
+        self._initial_index = None
+        self._first_change = None
+        self._last_mod_time = None
+        self._num_rows = None
+
+    def _prompt_for_data_file(self):
+        """Ask user to provide path to the data file. Always before initializing pygame"""
+        root = tk.Tk()
+        root.withdraw()
+        self._source_data_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
+        root.destroy()
+
+        if not self._source_data_path:
+            raise("No file was selected.")
+        return self._source_data_path
+
+    def _init_pygame(self):
+        """Initialize pygame (we check if we have already created it)"""
+        if not self._pygame_window:    
+            pygame.init()
+            WIDTH, HEIGHT = 500, 400
+            self._pygame_window = pygame.display.set_mode((WIDTH, HEIGHT))
+            self._pygame_clock = pygame.time.Clock()
+            pygame.display.set_caption("UI")
+            self._pygame_window.fill(Colors.WHITE)
+    
+    def _quit_pygame(self):
+        """End pygame and krave"""
+        pygame.quit()
+    
+    def _init_analyzed_data_file(self):
+        """Create real_time_analized_data.csv file and place headers (to store analized data)"""
+        new_headers = [DATA_HEADERS.TRIAL, DATA_HEADERS.BG_REPEAT, DATA_HEADERS.WAIT_TIME, DATA_HEADERS.MISS_TRIAL]
+        with open(PATHS.TEMP_ANALYZED_DATA, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(new_headers)
+    
+    def _init_ui_loop_parameters(self):
+        """Initialize variables for check_for_data_update function in the main loop"""
+        self._index = 0
+        self._last_trial = -1
+        self._initial_index = 1
+        self._first_change = False
+        self._last_mod_time = None
+        # TODO(r.hueto@icloud.com): Remove total_trials when connected with main krave loop.
+        self._total_trials = 42
+    
+    def _check_pygame_quit_event(self):
+        """Check for events in pygame to quit the main loop and end program"""
+        for event in pygame.event.get():
+                if pygame.mouse.get_pressed()[0]:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                    if self.buttonStop.pressed(mouse_x,mouse_y) and self.buttonStart.activated:
+                        return self.buttonStop.activate()
+                    
+                    if self.buttonStart.pressed(mouse_x,mouse_y) and self.buttonStart.activated == False:
+                        self._source_data_path = self.buttonStart.activate()
+                
+                if event.type == pygame.QUIT:
+                    return False
+        return True
+
+    def plot_data(self):
+        """This functions reads the file created with the analized data and plots it
+        Maybe more work on legend"""
+
+        plt.clf()
+
+        #load data
+        data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
+
+        #Get the name of the file with now extencion (ex: example.csv --> example)
+        file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
+
+        max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
+
+        #We plot the wait times. If it is a miss trial (row[-1] == True) then we dont plot the value but we
+        #do a red square indicating is a miss
+        for index, row in data.iterrows():
+            if row[-1] == False:
+                plt.plot(row[DATA_HEADERS.TRIAL], row[DATA_HEADERS.WAIT_TIME], linestyle="", marker="o", color = "black")
+            else:
+                plt.axvspan(index - 0.5, index + 0.5, color = "red", alpha = 0.25)
+            
+            max_wait_time = max(max_wait_time, row[DATA_HEADERS.WAIT_TIME])
+        
+        #we get all the data that is not a miss trial and plot it with lines (it also joins the space of miss trials, maybe review)
+        #false_data = data[data[DATA_HEADERS.MISS_TRIAL] == False] 
+        #plt.plot(false_data[DATA_HEADERS.TRIAL], false_data[DATA_HEADERS.WAIT_TIME], '-', color='gray', alpha=0.5)
+
+        #we get the different heights to create the top numbres (bg repeat)
+        h1 = max_wait_time + (max_wait_time / 100 * 10)
+        h2 = max_wait_time + (max_wait_time / 100 * 15)
+        h3 = max_wait_time + (max_wait_time / 100 * 20)
+        
+        #plot the two black lines of separration
+        plt.plot([0, len(data) - 1],[ h1,h1], color = "black")
+        plt.plot([0, len(data) - 1],[ h3,h3], color = "black")
+
+        #Name of axixs and title(name of the file we are getting the data from originally, no analized)
+        plt.xlabel("trial #")
+        plt.ylabel("t (s)")
+        plt.title(file_name)
+
+        #Plot the numbers (bg repeat)
+        for index, row in data.iterrows():
+            plt.text(row[DATA_HEADERS.TRIAL], h2, str(row[DATA_HEADERS.BG_REPEAT]), fontsize=12, color='lightseagreen', ha='center', va='center', alpha=0.5)
+        
+        #TO INDICATE THE LEGENDS OF THE GRAPH WE CREATE A POINT WITH THE SAME COLOR
+        #AND WE ASIGN A LABEL (currenly disablabled, not working the position)
+        plt.plot([],[], color = "black", label = "wait time")
+        plt.plot([],[], color = "lightseagreen", label = "bg repeat", )
+        #plt.subplots_adjust(right=0.75) #Edge in the outside of the graph (problem -- graph compressed)
+        #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
+
+        try:
+            plt.savefig(PATHS.TEMP_IMG)
+        except Exception as e:
+            print(f"Error al guardar la imagen: {e}")
+
+        #Resize image
+        imagen = Image.open(PATHS.TEMP_IMG)
+        nuevo_tamano = (450, 350) #width and height
+        imagen_redimensionada = imagen.resize(nuevo_tamano)
+
+        # Save image with new name
+        imagen_redimensionada.save(PATHS.TEMP_IMG_RESIZED)
+    
+    def draw(self):
+        """Loads graph image and draws elements in the pygame window"""
+        self._pygame_window.fill(Colors.WHITE)
+        if self.buttonStart.activated:
+            img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
+            self._pygame_window.blit(img, (25,0))
+        
+        if (self.buttonStart.activated == False):
+            self.buttonStart.draw("START", self._pygame_window)
+        else:
+            self.buttonStop.draw("STOP", self._pygame_window)
+
+        pygame.display.update()
+    
+    def read_data_file_csv(self):
+        reader = csv.reader(open(self._source_data_path))
+        self._num_rows = len(list(reader))
+        data = pd.read_csv(self._source_data_path, delimiter = ",")
+        return data
+    
+    def write_TEMP_ANALYZED_DATA_csv(self, output_analyzed_data):
+        with open(PATHS.TEMP_ANALYZED_DATA, "a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(output_analyzed_data)
+
+    def check_for_data_update(self):
+        """Check for updates in the self._source_data_path file and if there is an update it analizes the new rows of the file,
+        copies the new analized data to the TEMP_ANALIZED_DATA file and plots with this file. Skip first modification (headers) 
+        and trial -1 is not ploted or saved in the TEMP_ANALIZED_DATA file"""
+
+
+        if detect_change(self._source_data_path, self._last_mod_time):
+            """we do not analyze the the first change because it is the headers creation and that is not data to analyze (otherwise error)"""
+            if self._first_change:
+                #Get new mod date
+                self._last_mod_time = os.path.getmtime(self._source_data_path)
+
+                #Load data, num of rows and diference from the index we are in and the num of rows
+                data = self.read_data_file_csv()
+
+                diff = (self._num_rows - 2) - self._index #New rows added since last check
+
+                #Iterate throught all the new rows
+                for i in range(diff):
+                    new_index = self._index + 1 + i
+                    output_analyzed_data = analyze_data(data, new_index, self._initial_index, self._last_trial)
+
+                    if output_analyzed_data:
+                        self._initial_index = new_index
+
+                        #We dont want to plot the trial -1 (isnt a real trial) 
+                        if self._last_trial != -1:
+
+                            #We add the new analized data to the file to plot
+                            self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
+                            
+                            #We plot the data from the analized file
+                            self.plot_data()
+                        self._last_trial += 1
+                
+                self._index = new_index
+
+            else:
+                self._first_change = True
+                self._last_mod_time = os.path.getmtime(self._source_data_path)
+
+            self._index += 1
+
+    def run(self):
+        """Run main UI thread."""
+
+        self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
+        self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
+        
+        self._init_pygame()
+        self._init_analyzed_data_file()
+        self._init_ui_loop_parameters()
+        
+        run = True
+        start_time = time.time()
+        while run:
+            # Run UI update every {update_time_seconds} seconds.
+            if self.buttonStart.activated:
+                current_time = time.time()
+                diff_time = current_time - start_time
+                if diff_time >= self._update_time_seconds:
+                    start_time = time.time()
+                    self.check_for_data_update()
+
+            self._pygame_clock.tick(self._FPS)
+            self.draw()
+            run = self._check_pygame_quit_event()
+
+
+        pid = self.buttonStart.RUN_TASK.pid
+        if self.buttonStart.RUN_TASK.poll() is None:
+            print("Ending process...")
+            self.buttonStart.RUN_TASK.terminate()
+            self.buttonStart.RUN_TASK.wait()
+            print("Process ended")
+        self._quit_pygame()
 
 #FUNCTIONS
-def analyze_data(data, index, initial_index, last_trial, total_trials):
-    #In this function we check if we started a new trial (with the actual row)
-    #if we started one then we check if it's a miss trial, the wait time and the backgrounds
+def analyze_data(data, index, initial_index, last_trial):
+    """check in the self._source_data_path in the index row if we start a new trial. 
+    if we started one then we check if it's a miss trial, the wait time and the backgrounds"""
 
     actual_row = data.iloc[index]
     actual_trial = actual_row[3]
@@ -53,226 +296,13 @@ def analyze_data(data, index, initial_index, last_trial, total_trials):
                 miss_trial = True
         return([last_trial, number_background, wait_time, miss_trial])
 
-    else:
-
-        return (False)
-
-    
-    
-
-def plot_data(path_data_file, path_data_file2, path_img, path_resized_image):
-    #This functions reads the file created with the analized data and plots it
-    #Maybe more work on legend
-
-    #load data
-    data = pd.read_csv(path_data_file, delimiter = ",")
-
-    #Get the name of the file with now extencion (ex: example.csv --> example)
-    file_name = os.path.splitext(os.path.basename(path_data_file2))[0]
-
-    max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
-
-    #We plot the wait times. If it is a miss trial (row[-1] == True) then we dont plot the value but we
-    #do a red square indicating is a miss
-    for index, row in data.iterrows():
-        if row[-1] == False:
-            plt.plot(row["trial"], row["wait_time"], linestyle="", marker="o", color = "black")
-        else:
-            plt.axvspan(index - 0.5, index + 0.5, color = "red", alpha = 0.25)
-        
-        max_wait_time = max(max_wait_time, row["wait_time"])
-    
-    #we get all the data that is not a miss trial and plot it with lines (it also joins the space of miss trials, maybe review)
-    false_data = data[data['miss_trial'] == False] 
-    plt.plot(false_data['trial'], false_data['wait_time'], '-', color='gray', alpha=0.5)
-
-    #we get the different heights to create the top numbres (bg repeat)
-    h1 = max_wait_time + (max_wait_time / 100 * 10)
-    h2 = max_wait_time + (max_wait_time / 100 * 15)
-    h3 = max_wait_time + (max_wait_time / 100 * 20)
-    
-    #plot the two black lines of separration
-    plt.plot([0, len(data) - 1],[ h1,h1], color = "black")
-    plt.plot([0, len(data) - 1],[ h3,h3], color = "black")
-
-    #Name of axixs and title(name of the file we are getting the data from originally, no analized)
-    plt.xlabel("trial #")
-    plt.ylabel("t (s)")
-    plt.title(file_name)
-
-    #Plot the numbers (bg repeat)
-    for index, row in data.iterrows():
-        plt.text(row["trial"], h2, str(row["bg_repeat"]), fontsize=12, color='lightseagreen', ha='center', va='center', alpha=0.5)
-    
-    #TO INDICATE THE LEGENDS OF THE GRAPH WE CREATE A POINT WITH THE SAME COLOR
-    #AND WE ASIGN A LABEL (currenly disablabled, not working the position)
-    plt.plot([],[], color = "black", label = "wait time")
-    plt.plot([],[], color = "lightseagreen", label = "bg repeat", )
-    #plt.subplots_adjust(right=0.75) #Margen al exterior del grafico (se comprime el grafico :|)
-    #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
-
-    try:
-        plt.savefig(path_img)
-    except Exception as e:
-        print(f"Error al guardar la imagen: {e}")
-
-    #Resize image - PUEDE FALLAR
-    imagen = Image.open(path_img)
-    nuevo_tamano = (450, 350) #width and height
-    imagen_redimensionada = imagen.resize(nuevo_tamano)
-
-    # Save image with new name
-    imagen_redimensionada.save(path_resized_image)
-
-    
-
-def detect_change(path_data_file, time_last_mod):
-    #This functions detetcts if there has been a modification in the file with the date
-
-    time_mod = os.path.getmtime(path_data_file)
+def detect_change(source_data_path, time_last_mod):
+    """This functions detetcts if there has been a modification in the file with the date"""
+    time_mod = os.path.getmtime(source_data_path)
     if (time_mod != time_last_mod):
         return True
-    else:
-        return False
-
-def analisis():
-    global index, last_trial, initial_index, first_change, num_rows, new_rows, path_data_file, path_img, path_real_time_analized_data, path_resized_image, last_mod_time
-
-    print(index, last_trial)
-
-    if detect_change(path_data_file, last_mod_time) == True:
-        if first_change != False:
-            #print("----CHANGE DETECTED----")
-
-            #Get new mod date
-            last_mod_time = os.path.getmtime(path_data_file)
-
-            #Load data, num of rows and diference from the index we are in and the num of rows
-            reader = csv.reader(open(path_data_file))
-            num_rows = len(list(reader))
-            data = pd.read_csv(path_data_file, delimiter = ",")
-
-            diff = (num_rows - 2) - index #New rows added since last check
-            #print("NUMBER OF ROWS:", num_rows, "DIFF:", diff)
-
-            #Iterate throught all the new rows
-            for i in range(diff):
-                new_index = index + 1 + i
-                #print("NEW INDEX: ", new_index)
-                sortida = analyze_data(data, new_index, initial_index, last_trial, total_trials)
-
-                if sortida != False:
-                    #print("OUTPUT: ", sortida)
-                    new_rows.append(sortida)
-                    initial_index = new_index
-
-                    #We dont want to plot the trial -1 (isnt a real trial) 
-                    if last_trial != -1:
-
-                        #We add the new analized data to the file to plot
-                        with open(path_real_time_analized_data, "a", newline="") as file:
-                            writer = csv.writer(file)
-                            writer.writerow(sortida)
-                        
-                        #We plot the data from the analized file
-                        plot_data(path_real_time_analized_data, path_data_file, path_img, path_resized_image)
-                    last_trial += 1
-            
-            index = new_index
-
-        else:
-            first_change = True
-            last_mod_time = os.path.getmtime(path_data_file)
-
-        index += 1
-
-def draw():
-    win.fill(Colors.WHITE)
-    #win.blit(graph, (WIDTH / 2 - (img_width / 2), 0))
-    #grafico.draw(win)
-
-    imagen = pygame.image.load(path_resized_image)
-
-    win.blit(imagen, (25,0))
-
-    buttonRefresh.draw("REFRESH", win)
-    buttonSelectData.draw("SELECT FILE", win)
-    pygame.display.update()
-
-#creamos un threat para poder abrir una nueva ventana
-def get_path(button):
-    return buttonSelectData.activate()
-
-
-def normalice_color(color_rgb):
-    r, g, b = color_rgb
-    return (r / 255, g / 255, b / 255)
-
-def main():
-    #INITIALIZE PROYECT
-    #Get the file where the data is being written
-    root = tk.Tk()
-    root.withdraw()
-    path_data_file = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
-    root.destroy()
-
-    if not path_data_file:
-        print("No se seleccionó ningún archivo.")
-
-    pygame.init()
-    WIDTH, HEIGHT = 500, 400
-    win = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("HSL project")
-
-    #FUNCTIONS
-    #Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
-    warnings.simplefilter(action="ignore", category=FutureWarning)
-    #Paths
-    path_real_time_analized_data = '/home/ricardo/krave/krave/ui/analized_data/real_time_analized_data.csv'
-    path_img = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data.png'
-    path_resized_image = '/home/ricardo/krave/krave/ui/images/graph_analyzed_data_resized.png'
-
-    new_headers = ["trial", "bg_repeat", "wait_time", "miss_trial"]
-    with open(path_real_time_analized_data, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(new_headers)
-
-    win.fill(Colors.WHITE)
-    run = True
-    #OBJECTS
-    buttonRefresh = RefreshButton(100,342,100,50, Colors.BLACK)
-    buttonSelectData = SelectData(260,342,150,50, Colors.BLACK)
-    FPS = 15
-    proceso = False #Para comprovar si ha acabado el hilo y que no se ponga a imprimir todo el rato que no hay archivo
-    clock = pygame.time.Clock()
-
-    index = 0
-    total_trials = 42
-    new_rows = []
-    last_trial = -1
-    initial_index = 1
-    first_change = False
-    num_rows = 2
-    last_mod_time = os.path.getmtime(path_data_file)
-    start_time = time.time()
-
-
-    while run:
-        current_time = time.time()
-        diff_time = current_time - start_time
-        if diff_time >= 5:
-            start_time = time.time()
-            analisis()
-
-        clock.tick(FPS)
-        
-        draw()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-
-    pygame.quit()
+    return False
 
 if __name__ == '__main__':
-    main()
+    '''Runs only if direclty executed, no execution if imported (then you need to call main())'''
+    UI().run()

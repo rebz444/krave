@@ -6,6 +6,8 @@ from shutil import rmtree
 
 from krave.helper import utils
 
+from krave.ui.constants import PATHS
+
 import paramiko
 
 
@@ -59,6 +61,10 @@ class DataWriter:
 
     def make_events(self):
         events_path = os.path.join(self.data_write_path, self.events_name)
+
+        with open(PATHS.INITIAL_COMMUNICATION, 'a') as file:
+            file.write(events_path)
+
         self.events = open(events_path, 'w')
         data_fields = 'session_time,block_num,session_trial_num,block_trial_num,state,time_bg,reward_size,value,key'
         self.events.write(data_fields + '\n')

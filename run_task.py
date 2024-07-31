@@ -1,8 +1,8 @@
-from krave.experiment.task import Task
-
+from krave.experiment.task import Task    
 
 if __name__ == '__main__':
     Task(mouse="test",
          rig_name="rig1",
          training="regular",
-         trainer="Rebekah").run()
+         trainer="Rebekah",
+         record=True).run()
