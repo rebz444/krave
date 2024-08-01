@@ -4,6 +4,9 @@ from tkinter import Menu
 class experiment_options():
     def __init__(self):
         self.root = None
+        self.rig_var = None
+        self.training_var = None
+        self.trainer_var = None
     
     def _init_tkinter(self):
         self.root = tk.Tk()
@@ -15,25 +18,25 @@ class experiment_options():
     
     def create_rig_menu(self):
         self.rig_menu = Menu(self.menubar, tearoff = 0)
-        self.rig_menu.add_command(label="Rig 1", command = self.f_rig("rig1"))
-        self.rig_menu.add_command(label="Rig 2", command = self.f_rig("rig2"))
-        self.rig_menu.add_command(label="Rig 3", command = self.f_rig("rig3"))
-        self.rig_menu.add_command(label="Rig 4", command = self.f_rig("rig4"))
-        self.rig_menu.add_command(label="Rig 5", command = self.f_rig("rig5"))
-        self.rig_menu.add_command(label="Rig 6", command = self.f_rig("rig6"))
-        self.rig_menu.add_command(label="Rig 7", command = self.f_rig("rig7"))
+        self.rig_menu.add_command(label="Rig 1", command = lambda: self.f_rig("rig1"))
+        self.rig_menu.add_command(label="Rig 2", command = lambda: self.f_rig("rig2"))
+        self.rig_menu.add_command(label="Rig 3", command = lambda: self.f_rig("rig3"))
+        self.rig_menu.add_command(label="Rig 4", command = lambda: self.f_rig("rig4"))
+        self.rig_menu.add_command(label="Rig 5", command = lambda: self.f_rig("rig5"))
+        self.rig_menu.add_command(label="Rig 6", command = lambda: self.f_rig("rig6"))
+        self.rig_menu.add_command(label="Rig 7", command = lambda: self.f_rig("rig7"))
         self.menubar.add_cascade(label="Rig", menu = self.rig_menu)
 
     def create_training_menu(self):
         self.training_menu = Menu(self.menubar, tearoff = 0)
-        self.training_menu.add_command(label="Shaping", command = self.f_training("shaping"))
-        self.training_menu.add_command(label="Regular", command = self.f_training("regular"))
+        self.training_menu.add_command(label="Shaping", command = lambda: self.f_training("shaping"))
+        self.training_menu.add_command(label="Regular", command = lambda: self.f_training("regular"))
         self.menubar.add_cascade(label="Training", menu = self.training_menu)
 
     def create_trainer_menu(self):
         self.trainer_menu = Menu(self.menubar, tearoff = 0)
-        self.trainer_menu.add_command(label="Rebekah", command = self.f_trainer("Rebekah"))
-        self.trainer_menu.add_command(label="Lianne", command = self.f_trainer("Lianne"))
+        self.trainer_menu.add_command(label="Rebekah", command = lambda: self.f_trainer("Rebekah"))
+        self.trainer_menu.add_command(label="Lianne", command = lambda: self.f_trainer("Lianne"))
         self.menubar.add_cascade(label="Trainer", menu = self.trainer_menu)
 
     def add_menu_bar_to_window(self):
@@ -71,12 +74,15 @@ class experiment_options():
 
     def f_rig(self, rig_number_input):
         self.rig_var = rig_number_input
+        print(self.rig_var)
 
     def f_training(self, training_input):
         self.training_var = training_input
+        print(self.training_var)
 
     def f_trainer(self, trainer_input):
         self.trainer_var = trainer_input
+        print(self.trainer_var)
 
     def accept(self):
         self.root.destroy()
@@ -96,3 +102,4 @@ class experiment_options():
 
 if __name__ == "__main__":
     experiment_options().run()
+    

@@ -250,7 +250,10 @@ class UI():
     def run(self):
         """Run main UI thread."""
 
-        experiment_options().run()
+        menu = experiment_options()
+        menu.run()
+        print(menu.rig_var, menu.training_menu, menu.trainer_var)
+        print(menu.record_var, menu.forward_file_var)
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
