@@ -15,6 +15,7 @@ class PATHS:
     TEMP_IMG_RESIZED = '/home/pi/krave/krave/ui/images/graph_analyzed_data_resized.png' 
     RUN_TASK = '/home/pi/krave/run_task.sh'
     COMMUNICATION = '/home/pi/krave/krave/ui/communications/communication.txt'
+    COMMUNICATION2 = '/home/pi/krave/krave/ui/communications/communication2.txt'
 
 class DATA_HEADERS:
     TRIAL = "trial"

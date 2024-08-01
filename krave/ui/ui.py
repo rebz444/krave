@@ -254,11 +254,19 @@ class UI():
         menu = experiment_options()
         menu.run()
         print(menu.rig_var, menu.training_var, menu.trainer_var)
-        print(menu.record_var.get(), menu.forward_file_var.get(), menu.text_input.get())
+        print(menu.record_var.get(), menu.forward_file_var.get(), menu.text_input_var)
 
-        if menu.rig_var == None or menu.training_var == None or menu.trainer_var == None:
+        if menu.rig_var == None or menu.training_var == None or menu.trainer_var == None or menu.text_input_var == "":
             print("Error: You need to select all the options for the experiment")
             sys.exit(1)
+
+        with open(PATHS.COMMUNICATION2, 'a') as file:
+            file.write(menu.rig_var)
+            file.write(menu.training_var)
+            file.write(menu.trainer_var)
+            file.write(menu.record_var.get())
+            file.write(menu.forward_file_var.get())
+            file.write(menu.text_input_var)
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
