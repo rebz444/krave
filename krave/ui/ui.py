@@ -261,12 +261,13 @@ class UI():
             sys.exit(1)
 
         with open(PATHS.COMMUNICATION2, 'a') as file:
-            file.write(menu.rig_var)
-            file.write(menu.training_var)
-            file.write(menu.trainer_var)
-            file.write(str(menu.record_var.get()))
-            file.write(str(menu.forward_file_var.get()))
-            file.write(menu.text_input_var)
+            writer = csv.writer(file)
+            writer.writerow(menu.rig_var)
+            writer.writerow(menu.training_var)
+            writer.writerow(menu.trainer_var)
+            writer.writerow(str(menu.record_var.get()))
+            writer.writerow(str(menu.forward_file_var.get()))
+            writer.writerow(menu.text_input_var)
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)

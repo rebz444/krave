@@ -2,7 +2,7 @@
 from krave.experiment.task import Task
 import sys
 
-if os.path.exists(PATHS.COMMUNICATION):
+if os.path.exists(PATHS.COMMUNICATION2):
     with open(PATHS.COMMUNICATION2, "r") as file:
         reader = csv.reader(file)
         reader[0] = rig_name_var
