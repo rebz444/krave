@@ -16,6 +16,16 @@ else:
     print("Data Error")
     sys.exit(1)
 
+if record_var == "True":
+    record_var = True
+else:
+    record_var = False
+
+if forward_file_var == "True":
+    forward_file_var = True
+else:
+    forward_file_var = False
+
 #Testing
 if __name__ == '__main__':
     Task(mouse=mouse_var,

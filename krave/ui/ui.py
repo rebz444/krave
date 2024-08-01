@@ -264,8 +264,8 @@ class UI():
             file.write(menu.rig_var)
             file.write(menu.training_var)
             file.write(menu.trainer_var)
-            file.write(menu.record_var.get())
-            file.write(menu.forward_file_var.get())
+            file.write(str(menu.record_var.get()))
+            file.write(str(menu.forward_file_var.get()))
             file.write(menu.text_input_var)
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
