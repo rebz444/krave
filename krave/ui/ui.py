@@ -5,6 +5,7 @@ from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_S
 from krave.output.data_writer import DataWriter
 from krave.ui.button_start_class import StartButton
 from krave.ui.button_stop_class import StopButton
+from krave.ui.experiment_options import experiment_options
 import tkinter as tk
 from tkinter import filedialog
 from threading import Thread
@@ -249,6 +250,8 @@ class UI():
     def run(self):
         """Run main UI thread."""
 
+        experiment_options().run()
+
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
         
@@ -274,6 +277,7 @@ class UI():
             if run:
                 run = self.check_running()
 
+        #TODO(r.hueto@icloud.com) clean final code and create function to writte again final data trial
         if self.buttonStart.activated == True:
             pid = self.buttonStart.RUN_TASK.pid
             if self.buttonStart.RUN_TASK.poll() is None:
@@ -281,10 +285,17 @@ class UI():
                 self.buttonStart.RUN_TASK.terminate()
                 self.buttonStart.RUN_TASK.wait()
                 print("Process ended")
-        data = self.read_data_file_csv()
-        self._index = self._num_rows - 2
-        analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
-        self.plot_data(end = True)
+            data = self.read_data_file_csv()
+            self._index = self._num_rows - 2
+            output_analyzed_data = analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
+            if output_analyzed_data:
+                        #We dont want to plot the trial -1 (isnt a real trial) 
+                        if self._last_trial != -1:
+
+                            #We add the new analized data to the file to plot
+                            self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
+
+            self.plot_data(end = True)
         if os.path.exists(PATHS.COMMUNICATION):
             os.remove(PATHS.COMMUNICATION)
         self._quit_pygame()
