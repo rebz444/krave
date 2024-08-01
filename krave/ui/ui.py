@@ -16,6 +16,7 @@ import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 import csv
 from PIL import Image 
+import sys
 
 
 class UI():
@@ -252,8 +253,12 @@ class UI():
 
         menu = experiment_options()
         menu.run()
-        print(menu.rig_var, menu.training_menu, menu.trainer_var)
-        print(menu.record_var, menu.forward_file_var)
+        print(menu.rig_var, menu.training_var, menu.trainer_var)
+        print(menu.record_var.get(), menu.forward_file_var.get(), menu.text_input.get())
+
+        if menu.rig_var == None or menu.training_var == None or menu.trainer_var == None:
+            print("Error: You need to select all the options for the experiment")
+            sys.exit(1)
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)

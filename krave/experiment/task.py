@@ -19,8 +19,7 @@ import RPi.GPIO as GPIO
 class Task:
     def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
         # experiment information
-        #self.exp_name = utils.get_exp_name(mouse)
-        self.exp_name = 'exp2_short'
+        #self.exp_name = utils.get_exp_name(mouse) #  Selected by the system with the mouse name
 
         self.session_config = {"mouse": mouse, "exp": self.exp_name, "training": training, "rig": rig_name,
                                "trainer": trainer, "record": record, "forward_file": forward_file}

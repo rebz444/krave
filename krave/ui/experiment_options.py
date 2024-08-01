@@ -7,11 +7,13 @@ class experiment_options():
         self.rig_var = None
         self.training_var = None
         self.trainer_var = None
+        self.record_var = True
+        self.forward_file_war = True
     
     def _init_tkinter(self):
         self.root = tk.Tk()
         self.root.title("Experiment options")
-        self.root.geometry("300x185")
+        self.root.geometry("300x250")
     
     def create_menu_bar(self):
         self.menubar = Menu(self.root)
@@ -41,26 +43,33 @@ class experiment_options():
 
     def add_menu_bar_to_window(self):
         self.root.config(menu = self.menubar)
-
+    
     def create_frame_for_check_boxes(self):
         self.frame = tk.Frame(self.root)
         self.frame.pack(side='top', anchor='w', padx = 5, pady=20)
 
+    def create_text_entry(self):
+        label3 = tk.Label(self.frame, text="Enter mouse name:")
+        label3.grid(row=0, column=0, sticky='w', padx=(0, 10), pady=(0, 10))
+
+        self.text_input = tk.Entry(self.frame)
+        self.text_input.grid(row=0, column=1, sticky='w', pady=(0, 10))
+
     def create_text_and_checkbox_for_record(self):
         label1 = tk.Label(self.frame, text="Record:")
-        label1.grid(row=0, column=0, sticky='w', padx=(0, 10), pady = (0, 10))
+        label1.grid(row=1, column=0, sticky='w', padx=(0, 10), pady = (0, 10))
 
         self.record_var = tk.BooleanVar(value = True)
         record_checkbox = tk.Checkbutton(self.frame, variable=self.record_var)
-        record_checkbox.grid(row=0, column=1, sticky='w', pady = (0, 10))
+        record_checkbox.grid(row=1, column=1, sticky='w', pady = (0, 10))
 
     def create_text_and_checkbox_for_forward_file(self):
         self.label2 = tk.Label(self.frame, text="Forward file:")
-        self.label2.grid(row=1, column=0, sticky='w', padx=(0, 10), pady = (0, 10))
+        self.label2.grid(row=2, column=0, sticky='w', padx=(0, 10), pady = (0, 10))
 
         self.forward_file_var = tk.BooleanVar(value = True)
         forward_file_checkbox = tk.Checkbutton(self.frame, variable=self.forward_file_var)
-        forward_file_checkbox.grid(row=1, column=1, sticky='w', pady = (0, 10))
+        forward_file_checkbox.grid(row=2, column=1, sticky='w', pady = (0, 10))
 
     def create_accept_button(self):
         button_frame = tk.Frame(self.root)
@@ -85,6 +94,8 @@ class experiment_options():
         print(self.trainer_var)
 
     def accept(self):
+        self.input_text = self.text_input.get()
+
         self.root.destroy()
 
     def run(self):
@@ -95,6 +106,7 @@ class experiment_options():
         self.create_trainer_menu()
         self.add_menu_bar_to_window()
         self.create_frame_for_check_boxes()
+        self.create_text_entry()
         self.create_text_and_checkbox_for_record()
         self.create_text_and_checkbox_for_forward_file()
         self.create_accept_button()
@@ -102,4 +114,3 @@ class experiment_options():
 
 if __name__ == "__main__":
     experiment_options().run()
-    
