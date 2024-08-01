@@ -94,7 +94,7 @@ class experiment_options():
         print(self.trainer_var)
 
     def accept(self):
-        self.input_text = self.text_input.get()
+        self.text_input_var = self.text_input.get()
 
         self.root.destroy()
 
