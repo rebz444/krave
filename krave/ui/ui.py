@@ -232,6 +232,7 @@ class UI():
             self._index += 1
     
     def check_running(self):
+        stop = False
         if os.path.exists(PATHS.COMMUNICATION):
             with open(PATHS.COMMUNICATION, "r") as file:
                 stop = file.read()
@@ -273,18 +274,23 @@ class UI():
             if run:
                 run = self.check_running()
 
-
-        pid = self.buttonStart.RUN_TASK.pid
-        if self.buttonStart.RUN_TASK.poll() is None:
-            print("Ending process...")
-            self.buttonStart.RUN_TASK.terminate()
-            self.buttonStart.RUN_TASK.wait()
-            print("Process ended")
+        if self.buttonStart.activated == True:
+            pid = self.buttonStart.RUN_TASK.pid
+            if self.buttonStart.RUN_TASK.poll() is None:
+                print("Ending process...")
+                self.buttonStart.RUN_TASK.terminate()
+                self.buttonStart.RUN_TASK.wait()
+                print("Process ended")
+        data = self.read_data_file_csv()
+        self._index = self._num_rows - 2
+        analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
         self.plot_data(end = True)
+        if os.path.exists(PATHS.COMMUNICATION):
+            os.remove(PATHS.COMMUNICATION)
         self._quit_pygame()
 
 #FUNCTIONS
-def analyze_data(data, index, initial_index, last_trial):
+def analyze_data(data, index, initial_index, last_trial, end = False):
     """check in the self._source_data_path in the index row if we start a new trial. 
     if we started one then we check if it's a miss trial, the wait time and the backgrounds"""
 
@@ -295,7 +301,7 @@ def analyze_data(data, index, initial_index, last_trial):
     wait_time = 0
     miss_trial = False
 
-    if (actual_trial != last_trial):
+    if (actual_trial != last_trial or end):
         number_background = 0
         initial_time = 0
         final_time = 0
