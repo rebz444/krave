@@ -1,8 +1,9 @@
 from krave.experiment.task import Task    
 
 if __name__ == '__main__':
-    Task(mouse="test",
-         rig_name="rig7",
+    Task(mouse="RZ045",
+         rig_name="rig3",
          training="regular",
          trainer="Rebekah",
-         record=True).run()
+         record=False,
+         forward_file = False).run()
