@@ -260,14 +260,14 @@ class UI():
             print("Error: You need to select all the options for the experiment")
             sys.exit(1)
 
-        with open(PATHS.COMMUNICATION2, 'a') as file:
+        with open(PATHS.COMMUNICATION2, 'w') as file:
             writer = csv.writer(file)
-            writer.writerow(menu.rig_var)
-            writer.writerow(menu.training_var)
-            writer.writerow(menu.trainer_var)
-            writer.writerow(str(menu.record_var.get()))
-            writer.writerow(str(menu.forward_file_var.get()))
-            writer.writerow(menu.text_input_var)
+            writer.writerow([menu.rig_var])
+            writer.writerow([menu.training_var])
+            writer.writerow([menu.trainer_var])
+            writer.writerow([str(menu.record_var.get())])
+            writer.writerow([str(menu.forward_file_var.get())])
+            writer.writerow([menu.text_input_var])
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
@@ -315,6 +315,9 @@ class UI():
             self.plot_data(end = True)
         if os.path.exists(PATHS.COMMUNICATION):
             os.remove(PATHS.COMMUNICATION)
+        if os.path.exists(PATHS.COMMUNICATION2):
+            os.remove(PATHS.COMMUNICATION2)
+        
         self._quit_pygame()
 
 #FUNCTIONS
