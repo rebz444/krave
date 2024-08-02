@@ -6,8 +6,8 @@ import time
 class CameraPi:
     def __init__(self):
         self.picam = Picamera2()
-        config = self.picam.create_preview_configuration(main =
-                                                          {"size": (512, 600)})
+        config = self.picam.create_preview_configuration(main={"size": (512, 600)},
+                                                         display="lores")
         self.picam.configure(config)
         self.camera_on = False
 
