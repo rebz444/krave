@@ -23,5 +23,10 @@ class DATA_HEADERS:
     WAIT_TIME = "wait_time"
     MISS_TRIAL = "miss_trial"
 
+class DATA_WORDS:
+    BACKGROUND = "background"
+    WAIT = "wait"
+    CONSUMPTION = "consumption"
+
 DEFAULT_FPS = 15
 DEFAULT_UPDATE_TIME_SECONDS = 2
