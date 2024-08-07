@@ -4,10 +4,9 @@ import pandas as pd
 from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS, DATA_WORDS
 from krave.ui.button_start_class import StartButton
 from krave.ui.button_stop_class import StopButton
-from krave.ui.experiment_options import experiment_options
+from krave.ui.experiment_options import ExperimentOptions
 import tkinter as tk
 from tkinter import filedialog
-from threading import Thread
 import os
 import time
 import warnings
@@ -206,6 +205,8 @@ class UI():
 
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
 
+                new_index = 0
+
                 #Iterate throught all the new rows
                 for i in range(diff):
                     new_index = self._index + 1 + i
@@ -232,7 +233,7 @@ class UI():
 
             self._index += 1
     
-    def check_running(self):
+    def check_krave_running(self):
         '''We check if task.py finishes the taks to end the UI and remove communication files. 
         Task.py writtes in a file that is finishes and we look for that in each iteration. '''
         
@@ -252,7 +253,7 @@ class UI():
     def create_menu_selector(self):
         '''Create the menu to select the initial conditions of the experiment
         Tkinter only works if pygame is not in use (before or after)'''
-        self.menu_selector = experiment_options()
+        self.menu_selector = ExperimentOptions()
 
     def run_menu_selector(self):
         '''Run the menu'''
@@ -343,7 +344,7 @@ class UI():
             run = self._check_pygame_quit_event()
             
             if run:
-                run = self.check_running()
+                run = self.check_krave_running()
         
         self.end_UI()
         self._quit_pygame()
