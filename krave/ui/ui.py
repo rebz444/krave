@@ -1,8 +1,7 @@
 import pygame
 import matplotlib.pyplot as plt
 import pandas as pd
-from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS
-from krave.output.data_writer import DataWriter
+from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_SECONDS, DATA_HEADERS, DATA_WORDS
 from krave.ui.button_start_class import StartButton
 from krave.ui.button_stop_class import StopButton
 from krave.ui.experiment_options import experiment_options
@@ -234,6 +233,9 @@ class UI():
             self._index += 1
     
     def check_running(self):
+        '''We check if task.py finishes the taks to end the UI and remove communication files. 
+        Task.py writtes in a file that is finishes and we look for that in each iteration. '''
+        
         stop = False
         if os.path.exists(PATHS.COMMUNICATION):
             with open(PATHS.COMMUNICATION, "r") as file:
@@ -243,31 +245,80 @@ class UI():
                 print('----STOP FROM UI----')
                 os.remove(PATHS.COMMUNICATION)
                 return False
+            
         return True
         
 
+    def create_menu_selector(self):
+        '''Create the menu to select the initial conditions of the experiment
+        Tkinter only works if pygame is not in use (before or after)'''
+        self.menu_selector = experiment_options()
+
+    def run_menu_selector(self):
+        '''Run the menu'''
+        self.menu_selector.run()
+
+    def check_data_menu_selector(self):
+        '''Check if the data provided by the user is correct (all selected). If not, get exception and quit'''
+        if self.menu_selector.rig_var == None or self.menu_selector.training_var == None or self.menu_selector.trainer_var == None or self.menu_selector.text_input_var == "":
+                    print("Error: You need to select all the options for the experiment")
+                    sys.exit(1)
+    
+    def write_data_menu_selector(self):
+        '''Write the data of the conditions of the experiment from the menu_selector in communications2 file. 
+        run_task.sh will read this data'''
+
+        with open(PATHS.COMMUNICATION2, 'w') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([self.menu_selector.rig_var])
+                    writer.writerow([self.menu_selector.training_var])
+                    writer.writerow([self.menu_selector.trainer_var])
+                    writer.writerow([str(self.menu_selector.record_var.get())])
+                    writer.writerow([str(self.menu_selector.forward_file_var.get())])
+                    writer.writerow([self.menu_selector.text_input_var])
+    
+    def final_data_plot(self):
+        '''We do a final analyze and plot of all the data with the last trial'''
+        data = self.read_data_file_csv()
+        self._index = self._num_rows - 2
+        output_analyzed_data = analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
+        if output_analyzed_data:
+                    #We dont want to plot the trial -1 (isnt a real trial) 
+                    if self._last_trial != -1:
+
+                        #We add the new analized data to the file to plot
+                        self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
+
+        self.plot_data(end = True)
+
+    def remove_communication_files(self):
+        '''We remove the communication files to avoid overwrite data and errors'''
+
+        if os.path.exists(PATHS.COMMUNICATION):
+            os.remove(PATHS.COMMUNICATION)
+        if os.path.exists(PATHS.COMMUNICATION2):
+            os.remove(PATHS.COMMUNICATION2)
+    
+    def end_UI(self):
+        '''We end run_task.sh process if it is running, the final data plot and remove the communication files'''
+
+        if self.buttonStart.activated:
+            if self.buttonStart.RUN_TASK.poll() is None:
+                print("Ending process...")
+                self.buttonStart.RUN_TASK.terminate()
+                self.buttonStart.RUN_TASK.wait()
+                print("Process ended")
         
+        self.final_data_plot()
+        self.remove_communication_files()
 
     def run(self):
         """Run main UI thread."""
 
-        menu = experiment_options()
-        menu.run()
-        print(menu.rig_var, menu.training_var, menu.trainer_var)
-        print(menu.record_var.get(), menu.forward_file_var.get(), menu.text_input_var)
-
-        if menu.rig_var == None or menu.training_var == None or menu.trainer_var == None or menu.text_input_var == "":
-            print("Error: You need to select all the options for the experiment")
-            sys.exit(1)
-
-        with open(PATHS.COMMUNICATION2, 'w') as file:
-            writer = csv.writer(file)
-            writer.writerow([menu.rig_var])
-            writer.writerow([menu.training_var])
-            writer.writerow([menu.trainer_var])
-            writer.writerow([str(menu.record_var.get())])
-            writer.writerow([str(menu.forward_file_var.get())])
-            writer.writerow([menu.text_input_var])
+        self.create_menu_selector()
+        self.run_menu_selector()
+        self.check_data_menu_selector()
+        self.write_data_menu_selector()
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
@@ -293,31 +344,8 @@ class UI():
             
             if run:
                 run = self.check_running()
-
-        #TODO(r.hueto@icloud.com) clean final code and create function to writte again final data trial
-        if self.buttonStart.activated == True:
-            pid = self.buttonStart.RUN_TASK.pid
-            if self.buttonStart.RUN_TASK.poll() is None:
-                print("Ending process...")
-                self.buttonStart.RUN_TASK.terminate()
-                self.buttonStart.RUN_TASK.wait()
-                print("Process ended")
-            data = self.read_data_file_csv()
-            self._index = self._num_rows - 2
-            output_analyzed_data = analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
-            if output_analyzed_data:
-                        #We dont want to plot the trial -1 (isnt a real trial) 
-                        if self._last_trial != -1:
-
-                            #We add the new analized data to the file to plot
-                            self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
-
-            self.plot_data(end = True)
-        if os.path.exists(PATHS.COMMUNICATION):
-            os.remove(PATHS.COMMUNICATION)
-        if os.path.exists(PATHS.COMMUNICATION2):
-            os.remove(PATHS.COMMUNICATION2)
         
+        self.end_UI()
         self._quit_pygame()
 
 #FUNCTIONS
@@ -341,13 +369,13 @@ def analyze_data(data, index, initial_index, last_trial, end = False):
 
         data_interval = data[initial_index:final_index + 1]
         for index, row in data_interval.iterrows():
-            if (row[-1] == "background"):
+            if (row[-1] == DATA_WORDS.BACKGROUND):
                 number_background += 1
             
-            elif (row[-1] == "wait"):
+            elif (row[-1] == DATA_WORDS.WAIT):
                 initial_time = row[0]
             
-            elif (row[-1] == "consumption"):
+            elif (row[-1] == DATA_WORDS.CONSUMPTION):
                 final_time = row[0]
                 wait_time = final_time - initial_time
                 consumption = True

@@ -5,35 +5,38 @@ import sys
 import os
 import csv
 
-options = []
+def get_experiment_options_data():
+    options = []
 
-if os.path.exists(PATHS.COMMUNICATION2):
-    with open(PATHS.COMMUNICATION2, "r") as file:
-        reader = csv.reader(file)
-        for row in reader:
-            options.append(row)
-    os.remove(PATHS.COMMUNICATION2)
-else:
-    print("Data Error")
-    sys.exit(1)
+    if os.path.exists(PATHS.COMMUNICATION2):
+        with open(PATHS.COMMUNICATION2, "r") as file:
+            reader = csv.reader(file)
+            for row in reader:
+                options.append(row)
+        os.remove(PATHS.COMMUNICATION2)
+    else:
+        print("Data Error")
+        sys.exit(1)
 
-for i in range(len(options)):
-    options[i] = options[i][0]
+    for i in range(len(options)):
+        options[i] = options[i][0]
 
-if options[3] == "True":
-    options[3] = True
-else:
-    options[3] = False
+    if options[3] == "True":
+        options[3] = True
+    else:
+        options[3] = False
 
-if options[4] == "True":
-    options[4] = True
-else:
-    options[4] = False
+    if options[4] == "True":
+        options[4] = True
+    else:
+        options[4] = False
 
-print(options)
+    return(options)
 
 #Testing
 if __name__ == '__main__':
+    options = get_experiment_options_data()
+
     Task(mouse=options[5],
          rig_name=options[0],
          training=options[1],
