@@ -14,13 +14,19 @@ class PATHS:
     TEMP_IMG = '/home/pi/krave/krave/ui/images/graph_analyzed_data.png'
     TEMP_IMG_RESIZED = '/home/pi/krave/krave/ui/images/graph_analyzed_data_resized.png' 
     RUN_TASK = '/home/pi/krave/run_task.sh'
-    INITIAL_COMMUNICATION = '/home/pi/krave/krave/ui/communications/initial_communication.txt'
+    COMMUNICATION = '/home/pi/krave/krave/ui/communications/communication.txt'
+    COMMUNICATION2 = '/home/pi/krave/krave/ui/communications/communication2.txt'
 
 class DATA_HEADERS:
     TRIAL = "trial"
     BG_REPEAT = "bg_repeat"
     WAIT_TIME = "wait_time"
     MISS_TRIAL = "miss_trial"
+
+class DATA_WORDS:
+    BACKGROUND = "background"
+    WAIT = "wait"
+    CONSUMPTION = "consumption"
 
 DEFAULT_FPS = 15
 DEFAULT_UPDATE_TIME_SECONDS = 2
