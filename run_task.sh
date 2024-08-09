@@ -6,6 +6,8 @@ import os
 import csv
 
 def get_experiment_options_data():
+    '''Read data from communications2 written by UI.py and provided by the tkinter selection of conditions script'''
+    
     options = []
 
     if os.path.exists(PATHS.COMMUNICATION2):
@@ -33,7 +35,7 @@ def get_experiment_options_data():
 
     return(options)
 
-#Testing
+
 if __name__ == '__main__':
     options = get_experiment_options_data()
 
@@ -44,15 +46,6 @@ if __name__ == '__main__':
          record=options[3],
          forward_file = options[4]).run()
 
-#Original
-'''
-if __name__ == '__main__':
-    Task(mouse="test",
-         rig_name="rig1",
-         training="regular",
-         trainer="Rebekah",
-         record=True).run()
-'''
 
 '''execute: 
 $ chmod +x run_task.sh

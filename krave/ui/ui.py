@@ -74,7 +74,6 @@ class UI():
         self._initial_index = 1
         self._first_change = False
         self._last_mod_time = None
-        # TODO(r.hueto@icloud.com): Remove total_trials when connected with main krave loop.
         self._total_trials = 42
     
     def _check_pygame_quit_event(self):
@@ -108,7 +107,7 @@ class UI():
         max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
 
         #We plot the wait times. If it is a miss trial (row[-1] == True) then we dont plot the value but we
-        #do a red square indicating is a miss
+        #do a red square indicating is a miss trial
         for index, row in data.iterrows():
             if row[-1] == False:
                 plt.plot(row[DATA_HEADERS.TRIAL], row[DATA_HEADERS.WAIT_TIME], linestyle="", marker="o", color = "black")
@@ -116,10 +115,6 @@ class UI():
                 plt.axvspan(index - 0.5, index + 0.5, color = "red", alpha = 0.25)
             
             max_wait_time = max(max_wait_time, row[DATA_HEADERS.WAIT_TIME])
-        
-        #we get all the data that is not a miss trial and plot it with lines (it also joins the space of miss trials, maybe review)
-        #false_data = data[data[DATA_HEADERS.MISS_TRIAL] == False] 
-        #plt.plot(false_data[DATA_HEADERS.TRIAL], false_data[DATA_HEADERS.WAIT_TIME], '-', color='gray', alpha=0.5)
 
         #we get the different heights to create the top numbres (bg repeat)
         h1 = max_wait_time + (max_wait_time / 100 * 10)
@@ -149,14 +144,14 @@ class UI():
         try:
             plt.savefig(PATHS.TEMP_IMG)
         except Exception as e:
-            print(f"Error al guardar la imagen: {e}")
+            print(f"Error when saving image: {e}")
 
         #Resize image
         imagen = Image.open(PATHS.TEMP_IMG)
         nuevo_tamano = (450, 350) #width and height
         imagen_redimensionada = imagen.resize(nuevo_tamano)
 
-        # Save image with new name
+        # Save image with the new name
         imagen_redimensionada.save(PATHS.TEMP_IMG_RESIZED)
         
         if end:
@@ -368,8 +363,8 @@ def analyze_data(data, index, initial_index, last_trial, end = False):
 
         final_index = index - 1
 
-        data_interval = data[initial_index:final_index + 1]
-        for index, row in data_interval.iterrows():
+        data_interval = data[initial_index:final_index + 1] #  Interval of data on 1 trial
+        for index, row in data_interval.iterrows(): #  Iterate for each row checking the data of the trial
             if (row[-1] == DATA_WORDS.BACKGROUND):
                 number_background += 1
             

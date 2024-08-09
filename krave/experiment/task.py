@@ -37,7 +37,7 @@ class Task:
         self.visual = Visual(self.data_writer)
         self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
-        #self.camera = CameraPi()
+        self.camera = CameraPi()
         self.sound = Sound()
 
         # session variables
@@ -76,7 +76,7 @@ class Task:
 
     def start_session(self):
         """starts camera for 20 sec to adjust position of the mouse before starting session"""
-        #self.camera.on()
+        self.camera.on()
         #input(f"running {self.exp_name}, press Enter to start session ..")
 
         self.running = True
@@ -92,7 +92,7 @@ class Task:
 
         self.visual.shutdown(self.status())
         self.spout.shutdown()
-        #self.camera.shutdown()
+        self.camera.shutdown()
         self.trigger.shutdown()
         GPIO.cleanup()
         print("GPIO cleaned up")

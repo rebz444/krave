@@ -116,4 +116,4 @@ class DataWriter:
         else:
             print(f'Files saved locally at {self.data_write_path}')
 
-        #self.post_on_slack()
+        self.post_on_slack()
