@@ -30,3 +30,5 @@ class DATA_WORDS:
 
 DEFAULT_FPS = 15
 DEFAULT_UPDATE_TIME_SECONDS = 2
+
+#TODO use https://docs.python.org/3/library/importlib.resources.html to find paths to different resources files

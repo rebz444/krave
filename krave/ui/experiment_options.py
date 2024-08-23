@@ -148,3 +148,5 @@ class ExperimentOptions():
 
 if __name__ == "__main__":
     ExperimentOptions().run()
+
+#TODO use constants to adress configuration names
