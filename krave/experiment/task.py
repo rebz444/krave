@@ -77,7 +77,7 @@ class Task:
     def start_session(self):
         """starts camera for 20 sec to adjust position of the mouse before starting session"""
         self.camera.on()
-        #input(f"running {self.exp_name}, press Enter to start session ..")
+        input(f"running {self.exp_name}, press Enter to start session ..")
 
         self.running = True
         self.session_start_time = time.time()
