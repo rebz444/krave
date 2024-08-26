@@ -10,6 +10,7 @@ from krave.hardware.camera_basler import CameraBasler
 from krave.hardware.spout import Spout
 from krave.hardware.camera_pi_2 import CameraPi
 from krave.hardware.sound import Sound
+from krave.ui.constants import PATHS
 
 import pygame
 import RPi.GPIO as GPIO
@@ -18,7 +19,7 @@ import RPi.GPIO as GPIO
 class Task:
     def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
         # experiment information
-        self.exp_name = utils.get_exp_name(mouse)
+        self.exp_name = utils.get_exp_name(mouse) #  Selected by the system with the mouse name
 
         self.session_config = {"mouse": mouse, "exp": self.exp_name, "training": training, "rig": rig_name,
                                "trainer": trainer, "record": record, "forward_file": forward_file}
@@ -110,6 +111,9 @@ class Task:
         
         print(self.session_config['mouse'], session_data)
         self.data_writer.end(session_data)
+
+        with open(PATHS.COMMUNICATION, 'a') as file:
+            file.write('True')
 
     def start_block(self):
         """

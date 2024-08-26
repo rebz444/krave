@@ -53,17 +53,20 @@ class Button(object):
      
      #METHODS
      def pressed(self, x2, y2):
+          '''When the UI window is pressed the coordenades are send to check if it pressed in a button'''
           if(x2 >= self._x and x2 <= self._x + self._width):
                if((y2 >= self._y and y2 <= self._y + self._height)):
                     return True
           return False
      
      def display_text(self, in_text, win):
+        '''Display the text in the button'''
         self._WORD_FONT = pygame.font.SysFont('comicsans', self.width // len(in_text))
         text = self._WORD_FONT.render(in_text, 1, Colors.WHITE)
         text_rect = text.get_rect(center=(self._x + self._width / 2, self._y + self._height / 2))
         win.blit(text, text_rect.topleft)
 
      def draw(self, text_in, win):
+          '''Draw the button in the pygame window'''
           pygame.draw.rect(win, self._color, (self._x, self._y, self._width, self._height))
           self.display_text(text_in, win)
