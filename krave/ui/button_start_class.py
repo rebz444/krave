@@ -13,7 +13,7 @@ class StartButton(Button):
         self.RUN_TASK = subprocess.Popen(["/bin/python3", PATHS.RUN_TASK])
         print(self.RUN_TASK.stdout)
 
-        time.sleep(10)
+        time.sleep(25)
 
         with open(PATHS.COMMUNICATION, "r") as file:
             self._source_data_path = file.read()

@@ -1,4 +1,5 @@
 from picamera2 import Picamera2, Preview
+from libcamera import controls
 
 import time
 import os
@@ -8,12 +9,14 @@ class CameraPi:
     def __init__(self):
         self.picam = Picamera2()
         config = self.picam.create_preview_configuration(main={"size": (512, 600)})
+        config["controls"]["ColorEffect"] = controls.ColorEffectEnum.BlackAndWhite
         self.picam.configure(config)
         self.camera_on = False
 
     def on(self):
         os.environ['SDL_VIDEO_WINDOW_POS'] = '0,0'
         self.picam.start_preview(Preview.QTGL)
+        self.picam.set_controls({"AfMode":controls.AfModeEnum.Continuous})
         self.picam.start()
         self.camera_on = True
 
@@ -22,7 +25,8 @@ class CameraPi:
         self.camera_on = False
 
     def shutdown(self):
-        self.off()
+        if self.camera_on:
+            self.off()
         self.picam.stop()
 
 
