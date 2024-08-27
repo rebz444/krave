@@ -253,6 +253,7 @@ class Task:
         elif self.session_config['training'] == "regular" \
                 and time.time() > self.wait_start_time + self.exp_config['time_wait_max']:
             print('no lick, missed trial')
+            self.waited_times.append(self.exp_config['time_wait_max'])
             self.num_miss_trial += 1
             self.end_trial()
 
