@@ -9,12 +9,18 @@ class Visual:
         self.data_writer = data_writer
         self.cue_displaying = False
         self.cue_on_time = None
-        os.environ['SDL_VIDEO_WINDOW_POS'] = '0,600'
 
         pygame.init()
-        self.screen = pygame.display.set_mode((1024, 600))  # for pi
+        info_object = pygame.display.Info()
+        screen_width = info_object.current_w
+        screen_height = info_object.current_h
+        print(screen_width, screen_height)
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (200, 200)
+        # self.screen = pygame.display.set_mode((1024, 592))
+        self.screen = pygame.display.set_mode((screen_width, screen_height)) # for pi
         # self.screen = pygame.display.set_mode((720, 480))  # for running when on desktop
 
+        # os.environ['SDL_VIDEO_WINDOW_POS'] = '0,608'
         self.screen.fill((0, 0, 255))
         pygame.display.update()
 
@@ -39,3 +45,6 @@ class Visual:
             self.off(status)
         self.cue_displaying = False
         pygame.quit()
+
+
+

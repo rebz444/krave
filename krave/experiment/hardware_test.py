@@ -7,7 +7,7 @@ from krave.hardware.visual import Visual
 from krave.hardware.camera_basler import CameraBasler
 from krave.hardware.spout import Spout
 # from krave.hardware.camera_pi import CameraPi
-from krave.hardware.camera_pi_2 import CameraPi
+# from krave.hardware.camera_pi_2 import CameraPi
 from krave.hardware.sound import Sound
 
 import pygame
@@ -27,7 +27,7 @@ class PiTest:
         self.visual = Visual(self.data_writer)
         self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
-        self.camera = CameraPi()
+        # self.camera = CameraPi()
         self.sound = Sound()
 
         self.start_time = time.time()
@@ -37,7 +37,7 @@ class PiTest:
         self.visual.shutdown(self.status)
         self.trigger.shutdown()
         self.spout.shutdown()
-        self.camera.shutdown()
+        # self.camera.shutdown()
 
         GPIO.cleanup()
 
@@ -46,7 +46,7 @@ class PiTest:
         self.end()
 
     def free_reward(self, reward_size, num_rewards):
-        self.camera.on()
+        # self.camera.on()
         time.sleep(20)
         num_pulses = self.spout.calculate_pulses(reward_size, self.status)
         print(num_pulses)
@@ -55,12 +55,6 @@ class PiTest:
             for _ in range(num_pulses):
                 self.spout.send_single_pulse(self.spout.pump_pins[0])
             time.sleep(3)
-        self.end()
-
-    def test_pi_camera_preview(self):
-        self.camera.on()
-        time.sleep(20)
-        self.camera.shutdown()
         self.end()
 
     def test_lick_sensor(self, time_limit=40):
@@ -128,4 +122,4 @@ class PiTest:
 
 
 if __name__ == '__main__':
-    PiTest("rig1").test_trigger()
+    PiTest("rig7").test_visual_cue()
