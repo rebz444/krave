@@ -9,7 +9,6 @@ class CameraPi:
     def __init__(self):
         self.picam = Picamera2()
         config = self.picam.create_preview_configuration(main={"size": (512, 600)})
-        config["controls"]["ColorEffect"] = controls.ColorEffectEnum.BlackAndWhite
         self.picam.configure(config)
         self.camera_on = False
 
