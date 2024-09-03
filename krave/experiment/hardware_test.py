@@ -70,7 +70,7 @@ class PiTest:
                 print(f"end lick {lick_counter} at {time.time() - start:.2f}")
         self.end()
 
-    def test_visual_cue(self, time_limit=15):
+    def test_visual_cue(self, time_limit=5):
         """flash visual cue when space bar is pressed"""
         start = time.time()
         while start + time_limit > time.time():

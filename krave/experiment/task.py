@@ -263,10 +263,10 @@ class Task:
 
     def handle_pygame_events(self):
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 print('manual quit')
                 self.running = False
-                self.ending_code = "pygame"
+                self.ending_code = "manual"
 
     def run(self):
         self.start_session()
