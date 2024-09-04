@@ -1,7 +1,7 @@
 {
   "exp1_short":  ["RZ026", "RZ027", "RZ030", "RZ031"],
   "exp1_long":  ["RZ028", "RZ029", "RZ032", "RZ033"],
-  "exp2_short": ["RZ034", "RZ035", "RZ036", "RZ047", "RZ048", "RZ049", "RZ050", "RZ051"],
+  "exp2_short": ["RZ034", "RZ035", "RZ036", "RZ047", "RZ048", "RZ049", "RZ050", "RZ051", "test"],
   "exp2_long": ["RZ037", "RZ038", "RZ039", "RZ052", "RZ053", "RZ054", "RZ055", "RZ056"],
   "exp3_short": ["RZ040", "RZ041", "RZ042", "test"],
   "exp3_long": ["RZ043", "RZ044", "RZ045"]
