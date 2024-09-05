@@ -9,9 +9,11 @@ class Visual:
         self.data_writer = data_writer
         self.cue_displaying = False
         self.cue_on_time = None
+        os.environ['SDL_VIDEO_WINDOW_POS'] = '0,600'
 
-        # pygame.init()
-        self.screen = pygame.display.set_mode((1024, 600), pygame.NOFRAME )
+        pygame.init()
+        display_info = pygame.display.Info()
+        self.screen = pygame.display.set_mode((display_info.current_w, display_info.current_h), pygame.NOFRAME )
         self.screen.fill((0, 0, 255))
 
         pygame.display.update()

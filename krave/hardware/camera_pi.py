@@ -9,7 +9,7 @@ class CameraPi:
         self.camera_pi.resolution = (512, 600)
         self.camera_pi.zoom = (0.25, 0.25, 0.5, 0.5)
         self.camera_pi.preview_fullscreen = False
-        self.camera_pi.preview_window = (0, 0, 512, 600)
+        self.camera_pi.preview_window = (512, 0, 512, 600)
         self.camera_on = False
 
     def on(self):

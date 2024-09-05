@@ -6,8 +6,7 @@ from krave.output.data_writer import DataWriter
 from krave.hardware.visual import Visual
 from krave.hardware.camera_basler import CameraBasler
 from krave.hardware.spout import Spout
-# from krave.hardware.camera_pi import CameraPi
-# from krave.hardware.camera_pi_2 import CameraPi
+from krave.hardware.camera_pi import CameraPi
 from krave.hardware.sound import Sound
 
 import pygame
@@ -27,7 +26,7 @@ class PiTest:
         self.visual = Visual(self.data_writer)
         self.trigger = CameraBasler(self.hardware_config, self.data_writer)
         self.spout = Spout(self.hardware_config, self.data_writer)
-        # self.camera = CameraPi()
+        self.camera = CameraPi()
         self.sound = Sound()
 
         self.start_time = time.time()
@@ -37,7 +36,7 @@ class PiTest:
         self.visual.shutdown(self.status)
         self.trigger.shutdown()
         self.spout.shutdown()
-        # self.camera.shutdown()
+        self.camera.shutdown()
 
         GPIO.cleanup()
 
