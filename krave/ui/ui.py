@@ -48,7 +48,7 @@ class UI():
     def _init_pygame(self):
         """Initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
-            os.environ['SDL_VIDEO_WINDOW_POS'] = "524,0"
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
             pygame.init()
             WIDTH, HEIGHT = 500, 400
             self._pygame_window = pygame.display.set_mode((WIDTH, HEIGHT))
