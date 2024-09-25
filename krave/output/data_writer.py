@@ -96,8 +96,11 @@ class DataWriter:
         ssh_client.close()
 
     def post_on_slack(self):
-        requests.post(url="https://hooks.slack.com/triggers/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",
-                      json=self.session_config)
+        try:
+            requests.post(url="https://hooks.slack.com/triggers/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",
+                          json=self.session_config)
+        except Exception as e:
+            print(f"Error posting on slack: {e}")
 
     def end(self, session_data=None):
         self.events.close()
