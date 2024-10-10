@@ -4,7 +4,7 @@ from krave.helper import utils
 import paramiko
 
 
-class DataForward:
+class DataSender:
     def __init__(self):
         self.data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
         self.pi_data_dir = self.data_writer_config["pi_data_folder"]
@@ -27,7 +27,7 @@ class DataForward:
             # Directory might already exist, which is fine
             pass
 
-    def process_dir(self):
+    def send_all_dir(self):
         try:
             for dir in os.listdir(self.pi_data_dir):
                 source_dir = os.path.join(self.pi_data_dir, dir)
@@ -61,7 +61,7 @@ class DataForward:
 
 
 if __name__ == '__main__':
-    DataForward().process_dir()
+    DataSender().send_all_dir()
 
 
 
