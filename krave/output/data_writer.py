@@ -93,6 +93,8 @@ class DataWriter:
                 remote_file = os.path.join(self.data_send_path,
                                            os.path.relpath(local_file, self.data_write_path))
                 sftp.put(local_file, remote_file)  # Transfer each file
+
+        sftp.close()
         ssh_client.close()
 
     def post_on_slack(self):
