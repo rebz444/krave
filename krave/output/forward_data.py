@@ -9,8 +9,8 @@ def forward_and_delete_folders():
     then deletes the forwarded folders from the source.
     """
     data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
-    pi_data_dir = data_writer_config["pi_data_dir"]
-    pc_data_dir = data_writer_config["pc_data_dir"]
+    pi_data_dir = data_writer_config["pi_data_folder"]
+    pc_data_dir = data_writer_config["pc_data_folder"]
     pc_ip = data_writer_config['pc_ip']
     pc_username = data_writer_config['pc_username']
     pc_password = data_writer_config['pc_password']
