@@ -1,67 +1,67 @@
 import os
+from shutil import rmtree
 from krave.helper import utils
 import paramiko
 
 
-def forward_and_delete_folders():
-    """
-    Forwards folders recursively from a source directory to a destination directory on a remote host using SSH,
-    then deletes the forwarded folders from the source.
-    """
-    data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
-    pi_data_dir = data_writer_config["pi_data_folder"]
-    pc_data_dir = data_writer_config["pc_data_folder"]
-    pc_ip = data_writer_config['pc_ip']
-    pc_username = data_writer_config['pc_username']
-    pc_password = data_writer_config['pc_password']
+class DataForward:
+    def __init__(self):
+        self.data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
+        self.pi_data_dir = self.data_writer_config["pi_data_folder"]
+        self.pc_data_dir = self.data_writer_config["pc_data_folder"]
 
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(hostname=pc_ip, username=pc_username, password=pc_password)
+        pc_ip = self.data_writer_config['pc_ip']
+        pc_username = self.data_writer_config['pc_username']
+        pc_password = self.data_writer_config['pc_password']
 
-    sftp = ssh.open_sftp()
+        self.ssh = paramiko.SSHClient()
+        self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.ssh.connect(hostname=pc_ip, username=pc_username, password=pc_password)
 
-    def _forward_and_delete_folder(source, dest):
-        if not os.path.exists(source):
-            print(f"Source directory does not exist: {source}")
-            return
+        self.sftp = self.ssh.open_sftp()
 
+    def create_remote_dir(self, path):
         try:
-            sftp.mkdir(dest)
+            self.sftp.mkdir(path)
         except IOError:
-            pass  # Directory might already exist
+            # Directory might already exist, which is fine
+            pass
 
-        for item in os.listdir(source):
-            item_path = os.path.join(source, item)
-            dest_path = os.path.join(dest, item)
-
-            if os.path.isdir(item_path):
-                _forward_and_delete_folder(item_path, dest_path)
-            else:
-                try:
-                    sftp.put(item_path, dest_path)
-                    os.remove(item_path)
-                    print(f"Forwarded and deleted: {item_path}")
-                except Exception as e:
-                    print(f"Error processing {item_path}: {str(e)}")
-
-        # Remove the now-empty source directory
+    def process_dir(self):
         try:
-            os.rmdir(source)
-            print(f"Deleted empty directory: {source}")
-        except OSError as e:
-            print(f"Error deleting directory {source}: {str(e)}")
+            for dir in os.listdir(self.pi_data_dir):
+                source_dir = os.path.join(self.pi_data_dir, dir)
+                dest_dir = os.path.join(self.pc_data_dir, dir)
 
-    try:
-        _forward_and_delete_folder(pi_data_dir, pc_data_dir)
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-    finally:
-        sftp.close()
-        ssh.close()
+                self.create_remote_dir(dest_dir)
+
+                for dirpath, dirnames, filenames in os.walk(source_dir):
+                    for dirname in dirnames:
+                        remote_dir = os.path.join(dest_dir, os.path.relpath(os.path.join(dirpath, dirname), source_dir))
+                        self.create_remote_dir(remote_dir)
+
+                    for filename in filenames:
+                        local_file = os.path.join(dirpath, filename)
+                        remote_file = os.path.join(dest_dir, os.path.relpath(local_file, source_dir))
+                        try:
+                            self.sftp.put(local_file, remote_file)
+                            print(f"Transferred: {local_file} to {remote_file}")
+                        except Exception as e:
+                            print(f"Error transferring {local_file}: {str(e)}")
+
+                try:
+                    rmtree(source_dir)
+                    print(f"Deleted: {source_dir}")
+                except Exception as e:
+                    print(f"Error deleting {source_dir}: {str(e)}")
+
+        finally:
+            self.sftp.close()
+            self.ssh.close()
+
 
 if __name__ == '__main__':
-    forward_and_delete_folders()
+    DataForward().process_dir()
 
 
 
