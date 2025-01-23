@@ -6,4 +6,4 @@ if __name__ == '__main__':
          training="regular",
          trainer="Rebekah",
          record=False,
-         forward_file = False).run()
+         forward_file=True).run()
