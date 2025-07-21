@@ -45,7 +45,7 @@ class PiTest:
         self.end()
 
     def free_reward(self, reward_size, num_rewards):
-        # self.camera.on()
+        self.camera.on()
         time.sleep(20)
         num_pulses = self.spout.calculate_pulses(reward_size, self.status)
         print(num_pulses)
@@ -88,30 +88,6 @@ class PiTest:
                         print("space is released")
                 pygame.display.update()
         self.end()
-
-    def lick_validation(self, n_licks=15, time_limit=500):
-        """mouse licks and water comes out. pictures are taken in the meantime."""
-        lick_counter = 0
-        lick_display_counter = 0
-        reward_counter = 0
-        try:
-            while self.start_time + time_limit > time.time():
-                self.trigger.square_wave(self.status)
-                self.spout.water_cleanup(self.status)
-                lick_change = self.spout.lick_status_check(self.status)
-                if lick_change == 1:
-                    lick_counter += 1
-                    lick_display_counter += 1
-                    print(f"start lick {lick_display_counter}")
-                elif lick_change == -1:
-                    print(f"end lick {lick_display_counter} at {time.time()-self.start_time:.2f} seconds")
-                if lick_counter >= n_licks:
-                    lick_counter = 0
-                    self.spout.calculate_pulses(2, self.status)
-                    self.spout.send_continuous_pulse(self.status)
-                    reward_counter += 1
-        finally:
-            self.end()
 
     def test_trigger(self, time_limit=20):
         """tests square wave"""

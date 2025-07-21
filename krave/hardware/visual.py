@@ -40,6 +40,29 @@ class Visual:
         self.cue_displaying = False
         pygame.quit()
 
+    def test_visual_cue(self, time_limit=5):
+        """flash visual cue when space bar is pressed"""
+        start = time.time()
+        while start + time_limit > time.time():
+            self.visual.screen.fill((0, 0, 0))
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    print('pygame quit')
+                    break
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.on(self.status)
+                        print("space is pressed")
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        self.visual.off(self.status)
+                        print("space is released")
+                pygame.display.update()
+        self.end()
+
+if __name__ == "__main__":
+    visual = Visual()
+    visual.test_visual_cue()
 
 
 

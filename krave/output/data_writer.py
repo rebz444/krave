@@ -5,18 +5,23 @@ import requests
 from shutil import rmtree
 
 from krave.helper import utils
-
 from krave.ui.constants import PATHS
+from krave.output.data_sender import DataSender
 
 import paramiko
 
 
 class DataWriter:
     def __init__(self, session_config, exp_config, hardware_config):
+        """
+        Initialize the DataWriter for a session.
+        Sets up paths, configuration, and creates necessary files for data logging.
+        """
         self.session_config = session_config
         self.exp_config = exp_config
         self.hardware_config = hardware_config
         self.data_writer_config = utils.get_config('krave.output', 'data_writer_config.json')
+        self.data_sender = DataSender()
 
         self.date = time.strftime("%Y-%m-%d")
         self.time = time.strftime("%H-%M-%S")
@@ -33,14 +38,23 @@ class DataWriter:
         self.make_events()
 
     def make_dir(self):
-        os.makedirs(self.data_write_path)
+        """
+        Create the directory for writing session data.
+        """
+        os.makedirs(self.data_write_path, exist_ok=True)
 
     def write_json(self, dict_to_save):
+        """
+        Write a dictionary as JSON to the session's meta file.
+        """
         meta_path = os.path.join(self.data_write_path, self.meta_name)
         with open(meta_path, "w") as f:
             json.dump(dict_to_save, f, indent=2)
 
     def make_meta(self):
+        """
+        Create the meta file for the session, including session, experiment, and hardware config.
+        """
         session_time = {"date": self.date, "time": self.time}
         self.session_config = session_time | self.session_config
         meta = {
@@ -51,6 +65,9 @@ class DataWriter:
         self.write_json(meta)
 
     def update_meta(self, session_data):
+        """
+        Update the meta file with additional session data (e.g., summary stats).
+        """
         self.session_config |= session_data
         meta = {
             "session_config": self.session_config,
@@ -60,6 +77,9 @@ class DataWriter:
         self.write_json(meta)
 
     def make_events(self):
+        """
+        Create the events file for logging trial/block/session events.
+        """
         events_path = os.path.join(self.data_write_path, self.events_name)
 
         with open(PATHS.COMMUNICATION, 'a') as file:
@@ -70,34 +90,18 @@ class DataWriter:
         self.events.write(data_fields + '\n')
 
     def log(self, string):
+        """
+        Log a string (event) to the events file, with a timestamp.
+        """
         new_line = str(time.time()) + ',' + string + '\n'
         self.events.write(new_line)
-
         self.events.flush()
         os.fsync(self.events.fileno())
 
-    def send_dir(self):
-        pc_ip = self.data_writer_config['pc_ip']
-        pc_username = self.data_writer_config['pc_username']
-        pc_password = self.data_writer_config['pc_password']
-
-        ssh_client = paramiko.SSHClient()  # Create the SSHClient object first
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # Set the policy
-        ssh_client.connect(hostname=pc_ip, username=pc_username, password=pc_password)
-
-        sftp = ssh_client.open_sftp()
-        sftp.mkdir(self.data_send_path)
-        for dirpath, dirnames, filenames in os.walk(self.data_write_path):
-            for filename in filenames:
-                local_file = os.path.join(dirpath, filename)
-                remote_file = os.path.join(self.data_send_path,
-                                           os.path.relpath(local_file, self.data_write_path))
-                sftp.put(local_file, remote_file)  # Transfer each file
-
-        sftp.close()
-        ssh_client.close()
-
     def post_on_slack(self):
+        """
+        Post session configuration to a Slack webhook for notification.
+        """
         try:
             requests.post(url="https://hooks.slack.com/triggers/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",
                           json=self.session_config)
@@ -105,20 +109,21 @@ class DataWriter:
             print(f"Error posting on slack: {e}")
 
     def end(self, session_data=None):
-        self.events.close()
-        if session_data:
-            self.update_meta(session_data)
-
-        if self.session_config['forward_file']:
-            try:
-                self.send_dir()
-                print(f'\nSuccessful file transfer to "{self.data_send_path}"\n')
-                rmtree(self.data_write_path)
-                print("Files deleted from local storage.")
-            except Exception as e:
-                print(f"Error transferring files: {e}")
-                print(f'Files saved locally at {self.data_write_path}')
-        else:
-            print(f'Files saved locally at {self.data_write_path}')
+        """
+        Finalize the session: close files, update meta, transfer files if needed, and post to Slack.
+        Ensures the events file is always closed, even if an error occurs.
+        """
+        try:
+            if session_data:
+                self.update_meta(session_data)
+        finally:
+            if hasattr(self, 'events') and self.events:
+                self.events.close()
 
         self.post_on_slack()
+
+        if self.session_config['forward_file']:
+            self.data_sender.send_dir(self.data_write_path, self.data_send_path)
+        else:
+            print(f'Files saved locally at {self.data_write_path}')
+        self.data_sender.shutdown()
