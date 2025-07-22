@@ -47,9 +47,9 @@ class DataSender:
                 remote_file = os.path.join(dest_dir, os.path.relpath(local_file, source_dir))
                 try:
                     self.sftp.put(local_file, remote_file)
-                    print(f"Transferred: {local_file} to {remote_file}")
                 except Exception as e:
                     print(f"Error transferring {local_file}: {str(e)}")
+        print(f"Transferred: {source_dir} to {dest_dir}")
         self.delete_dir(source_dir)
     
     def delete_dir(self, source_dir):

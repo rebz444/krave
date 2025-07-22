@@ -2,13 +2,10 @@ import time
 import os
 import json
 import requests
-from shutil import rmtree
 
 from krave.helper import utils
 from krave.ui.constants import PATHS
 from krave.output.data_sender import DataSender
-
-import paramiko
 
 
 class DataWriter:
