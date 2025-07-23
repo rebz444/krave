@@ -75,7 +75,6 @@ class Task:
         return self.status() + event
 
     def start_session(self):
-        """starts camera for 20 sec to adjust position of the mouse before starting session"""
         self.camera.on()
         input(f"running {self.exp_name}, press Enter to start session ..")
 
@@ -112,7 +111,7 @@ class Task:
         print(self.session_config['mouse'], session_data)
         self.data_writer.end(session_data)
 
-        with open(PATHS.COMMUNICATION, 'a') as file:
+        with open(PATHS.COMMUNICATION_TO_EXP, 'a') as file:
             file.write('True')
 
     def start_block(self):

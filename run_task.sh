@@ -6,16 +6,16 @@ import os
 import csv
 
 def get_experiment_options_data():
-    '''Read data from communications2 written by UI.py and provided by the tkinter selection of conditions script'''
+    '''Read data from communication_to_ui.txt written by UI.py and provided by the tkinter selection of conditions script'''
     
     options = []
 
-    if os.path.exists(PATHS.COMMUNICATION2):
-        with open(PATHS.COMMUNICATION2, "r") as file:
+    if os.path.exists(PATHS.COMMUNICATION_TO_UI):
+        with open(PATHS.COMMUNICATION_TO_UI, "r") as file:
             reader = csv.reader(file)
             for row in reader:
                 options.append(row)
-        os.remove(PATHS.COMMUNICATION2)
+        os.remove(PATHS.COMMUNICATION_TO_UI)
     else:
         print("Data Error")
         sys.exit(1)

@@ -19,8 +19,8 @@ class PATHS:
     TEMP_IMG = f'{BASE}/krave/ui/images/graph_analyzed_data.png'
     TEMP_IMG_RESIZED = f'{BASE}/krave/ui/images/graph_analyzed_data_resized.png'
     RUN_TASK = f'{BASE}/run_task.sh'
-    COMMUNICATION = f'{BASE}/krave/ui/communications/communication.txt'
-    COMMUNICATION2 = f'{BASE}/krave/ui/communications/communication2.txt'
+    COMMUNICATION_TO_EXP = f'{BASE}/krave/ui/communications/communication_to_exp.txt'
+    COMMUNICATION_TO_UI = f'{BASE}/krave/ui/communications/communication_to_ui.txt'
 
 class DATA_HEADERS:
     TRIAL = "trial"

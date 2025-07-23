@@ -244,13 +244,13 @@ class UI():
         Task.py writtes in a file that is finishes and we look for that in each iteration. '''
         
         stop = False
-        if os.path.exists(PATHS.COMMUNICATION):
-            with open(PATHS.COMMUNICATION, "r") as file:
+        if os.path.exists(PATHS.COMMUNICATION_TO_EXP):
+            with open(PATHS.COMMUNICATION_TO_EXP, "r") as file:
                 stop = file.read()
 
             if stop == "True":
                 print('----STOP FROM UI----')
-                os.remove(PATHS.COMMUNICATION)
+                os.remove(PATHS.COMMUNICATION_TO_EXP)
                 return False
             
         return True
@@ -275,7 +275,7 @@ class UI():
         '''Write the data of the conditions of the experiment from the menu_selector in communications2 file. 
         run_task.sh will read this data'''
 
-        with open(PATHS.COMMUNICATION2, 'w') as file:
+        with open(PATHS.COMMUNICATION_TO_UI, 'w') as file:
                     writer = csv.writer(file)
                     writer.writerow([self.menu_selector.rig_var])
                     writer.writerow([self.menu_selector.training_var])
@@ -301,10 +301,10 @@ class UI():
     def remove_communication_files(self):
         '''We remove the communication files to avoid overwrite data and errors'''
 
-        if os.path.exists(PATHS.COMMUNICATION):
-            os.remove(PATHS.COMMUNICATION)
-        if os.path.exists(PATHS.COMMUNICATION2):
-            os.remove(PATHS.COMMUNICATION2)
+        if os.path.exists(PATHS.COMMUNICATION_TO_EXP):
+            os.remove(PATHS.COMMUNICATION_TO_EXP)
+        if os.path.exists(PATHS.COMMUNICATION_TO_UI):
+            os.remove(PATHS.COMMUNICATION_TO_UI)
     
     def end_UI(self):
         '''We end run_task.sh process if it is running, the final data plot and remove the communication files'''
