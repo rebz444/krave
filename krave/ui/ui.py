@@ -223,10 +223,21 @@ class UI():
                 self._index = new_index
 
             else:
+                # On the first change, plot an empty plot with the correct axis and title
                 self._first_change = True
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
-
-            self._index += 1
+                # Get the file name for the title
+                file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
+                plt.xlabel("trial #")
+                plt.ylabel("t (s)")
+                plt.title(file_name)
+                plt.plot([], [], color="black", label="wait time")
+                plt.plot([], [], color="lightseagreen", label="bg repeat")
+                plt.savefig(PATHS.TEMP_IMG)
+                img = Image.open(PATHS.TEMP_IMG)
+                img = img.resize((450, 350))
+                img.save(PATHS.TEMP_IMG_RESIZED)
+                self._index += 1
     
     def check_krave_running(self):
         '''We check if task.py finishes the taks to end the UI and remove communication files. 

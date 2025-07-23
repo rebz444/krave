@@ -18,10 +18,7 @@ def get_exp_name(mouse):
         if mouse in mice:
             exp_name = exp
         elif mouse.lower() == 'test' and not exp_name:
-            exp_name = input("Enter the experiment name: ")
-            if not exp_name:
-                exp_name = "exp2_short"  # Set default name if no input
-            break
+            exp_name = "exp2_short"  # Set default name if no input
 
     if exp_name is None:
         raise Exception('Invalid mouse name')
