@@ -2,9 +2,9 @@ matplotlib==3.3.4
 numpy==1.19.5
 pandas==1.1.5
 paramiko==2.7.2
-picamera==1.13
+# picamera==1.13
 Pillow==10.4.0
-pygame==1.9.6
-Requests==2.32.3
+# pygame==1.9.6
+requests==2.32.3
 scipy==1.6.0
 setuptools==52.0.0

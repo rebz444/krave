@@ -1,1 +1,8 @@
-{"rig_var": "rig1", "training_var": "regular", "trainer_var": "Rebekah", "mouse_name": "test", "record_var": false, "forward_file_var": true}
+{
+    "rig_var": "rig1", 
+    "training_var": "regular", 
+    "trainer_var": "Rebekah", 
+    "mouse_name": "test", 
+    "record_var": false, 
+    "forward_file_var": true
+}

@@ -10,7 +10,7 @@ class StartButton(Button):
         It starts the .sh file and reads the data path where the data is being written
         After it removes the communication file'''
         self.activated = True
-        self.RUN_TASK = subprocess.Popen(["/bin/python3", PATHS.RUN_TASK])
+        self.RUN_TASK = subprocess.Popen(["python3", PATHS.RUN_TASK])
         print(self.RUN_TASK.stdout)
 
         time.sleep(25)

@@ -53,7 +53,7 @@ class UI():
             WIDTH, HEIGHT = 500, 400
             self._pygame_window = pygame.display.set_mode((WIDTH, HEIGHT))
             self._pygame_clock = pygame.time.Clock()
-            pygame.display.set_caption("UI")
+            pygame.display.set_caption("Krave")
             self._pygame_window.fill(Colors.WHITE)
     
     def _quit_pygame(self):

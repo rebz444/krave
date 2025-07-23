@@ -1,3 +1,8 @@
+import os
+
+# Use environment variable if set, otherwise default to /home/pi/krave
+BASE = os.environ.get('KRAVE_BASE_PATH', '/home/pi/krave')
+
 class Colors:
     BLACK = (0, 0, 0)       # 1
     GREEN = (0, 128, 0)     # 2
@@ -10,12 +15,12 @@ class Colors:
     L_BLUE = (65, 105, 225) # 9
 
 class PATHS:
-    TEMP_ANALYZED_DATA = '/home/pi/krave/krave/ui/analized_data/real_time_analized_data.csv'
-    TEMP_IMG = '/home/pi/krave/krave/ui/images/graph_analyzed_data.png'
-    TEMP_IMG_RESIZED = '/home/pi/krave/krave/ui/images/graph_analyzed_data_resized.png' 
-    RUN_TASK = '/home/pi/krave/run_task.sh'
-    COMMUNICATION = '/home/pi/krave/krave/ui/communications/communication.txt'
-    COMMUNICATION2 = '/home/pi/krave/krave/ui/communications/communication2.txt'
+    TEMP_ANALYZED_DATA = f'{BASE}/krave/ui/analized_data/real_time_analized_data.csv'
+    TEMP_IMG = f'{BASE}/krave/ui/images/graph_analyzed_data.png'
+    TEMP_IMG_RESIZED = f'{BASE}/krave/ui/images/graph_analyzed_data_resized.png'
+    RUN_TASK = f'{BASE}/run_task.sh'
+    COMMUNICATION = f'{BASE}/krave/ui/communications/communication.txt'
+    COMMUNICATION2 = f'{BASE}/krave/ui/communications/communication2.txt'
 
 class DATA_HEADERS:
     TRIAL = "trial"
