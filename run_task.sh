@@ -4,21 +4,25 @@ from krave.ui.constants import PATHS
 import sys
 import os
 import csv
+import time
 
 def get_experiment_options_data():
     '''Read data from communication_to_ui.txt written by UI.py and provided by the tkinter selection of conditions script'''
     
     options = []
 
-    if os.path.exists(PATHS.COMMUNICATION_TO_UI):
-        with open(PATHS.COMMUNICATION_TO_UI, "r") as file:
-            reader = csv.reader(file)
-            for row in reader:
-                options.append(row)
-        os.remove(PATHS.COMMUNICATION_TO_UI)
-    else:
-        print("Data Error")
-        sys.exit(1)
+    timeout = 10  # seconds
+    start = time.time()
+    while not os.path.exists(PATHS.COMMUNICATION_TO_UI):
+        if time.time() - start > timeout:
+            print("Data Error: Params file not found after waiting.")
+            sys.exit(1)
+        time.sleep(0.2)
+    with open(PATHS.COMMUNICATION_TO_UI, "r") as file:
+        reader = csv.reader(file)
+        for row in reader:
+            options.append(row)
+    os.remove(PATHS.COMMUNICATION_TO_UI)
 
     for i in range(len(options)):
         options[i] = options[i][0]

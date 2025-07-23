@@ -61,7 +61,7 @@ class ExperimentOptions():
                 json.dump(params, f)
         except Exception as e:
             print(f"Could not save experiment parameters: {e}")
-
+    
     def _init_tkinter(self):
         '''Initialize tkinter with the name and size'''
         self.root = tk.Tk()
@@ -99,7 +99,7 @@ class ExperimentOptions():
         trainer_menu = tk.OptionMenu(trainer_col, self.trainer_var_var, *self.TRAINER_OPTIONS)
         trainer_menu.config(width=12)
         trainer_menu.pack(fill='x')
-
+    
     def create_frame_for_check_boxes(self):
         '''Create a frame to place the mouse name entry and checkboxes'''
         self.frame = tk.Frame(self.root)

@@ -15,6 +15,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 import csv
 from PIL import Image 
 import sys
+import subprocess
 
 
 class UI():
@@ -34,6 +35,8 @@ class UI():
         self._last_mod_time = None
         self._num_rows = None
 
+        self.exp_process_started = False
+
     def _prompt_for_data_file(self):
         """Ask user to provide path to the data file. Always before initializing pygame"""
         root = tk.Tk()
@@ -42,7 +45,7 @@ class UI():
         root.destroy()
 
         if not self._source_data_path:
-            raise("No file was selected.")
+            raise Exception("No file was selected.")
         return self._source_data_path
 
     def _init_pygame(self):
@@ -79,17 +82,32 @@ class UI():
     def _check_pygame_quit_event(self):
         """Check for events in pygame to quit the main loop and end program"""
         for event in pygame.event.get():
-                if pygame.mouse.get_pressed()[0]:
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
+            if pygame.mouse.get_pressed()[0]:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                print(f"Mouse click detected at ({mouse_x}, {mouse_y})")
 
-                    if self.buttonStop.pressed(mouse_x,mouse_y) and self.buttonStart.activated:
-                        return self.buttonStop.activate()
-                    
-                    if self.buttonStart.pressed(mouse_x,mouse_y) and self.buttonStart.activated == False:
-                        self._source_data_path = self.buttonStart.activate()
+                if self.buttonStop.pressed(mouse_x, mouse_y) and self.buttonStart.activated:
+                    print("Stop button pressed.")
+                    with open(PATHS.COMMUNICATION_TO_EXP, 'w') as f:
+                        f.write('STOP')
+                    return self.buttonStop.activate()
                 
-                if event.type == pygame.QUIT:
-                    return False
+                if self.buttonStart.pressed(mouse_x, mouse_y) and self.buttonStart.activated == False:
+                    print("Start button pressed, activating...")
+                    self._source_data_path = self.buttonStart.activate()
+                    print(f"About to write start signal to: {PATHS.START_SIGNAL}")
+                    try:
+                        with open(PATHS.START_SIGNAL, 'w') as f:
+                            f.write('start')
+                        print("Start signal file written.")
+                    except Exception as e:
+                        print(f"Failed to write start signal: {e}")
+                        
+            if event.type == pygame.QUIT:
+                print("Pygame quit event detected.")
+                with open(PATHS.COMMUNICATION_TO_EXP, 'w') as f:
+                    f.write('STOP')
+                return False
         return True
 
     def plot_data(self, end = False):
@@ -173,6 +191,9 @@ class UI():
         pygame.display.update()
     
     def read_data_file_csv(self):
+        if not self._source_data_path:
+            print("No data file path set, skipping read_data_file_csv.")
+            return None
         reader = csv.reader(open(self._source_data_path))
         self._num_rows = len(list(reader))
         data = pd.read_csv(self._source_data_path, delimiter = ",")
@@ -188,6 +209,9 @@ class UI():
         copies the new analized data to the TEMP_ANALIZED_DATA file and plots with this file. Skip first modification (headers) 
         and trial -1 is not ploted or saved in the TEMP_ANALIZED_DATA file"""
 
+        if not self._source_data_path:
+            # No data file selected or experiment not started yet
+            return
 
         if detect_change(self._source_data_path, self._last_mod_time):
             """we do not analyze the the first change because it is the headers creation and that is not data to analyze (otherwise error)"""
@@ -246,7 +270,7 @@ class UI():
         stop = False
         if os.path.exists(PATHS.COMMUNICATION_TO_EXP):
             with open(PATHS.COMMUNICATION_TO_EXP, "r") as file:
-                stop = file.read()
+                stop = file.read().strip()
 
             if stop == "True":
                 print('----STOP FROM UI----')
@@ -287,6 +311,9 @@ class UI():
     def final_data_plot(self):
         '''We do a final analyze and plot of all the data with the last trial'''
         data = self.read_data_file_csv()
+        if data is None:
+            print("No data to plot in final_data_plot.")
+            return
         self._index = self._num_rows - 2
         output_analyzed_data = analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
         if output_analyzed_data:
@@ -305,6 +332,11 @@ class UI():
             os.remove(PATHS.COMMUNICATION_TO_EXP)
         if os.path.exists(PATHS.COMMUNICATION_TO_UI):
             os.remove(PATHS.COMMUNICATION_TO_UI)
+        if os.path.exists(PATHS.START_SIGNAL):
+            os.remove(PATHS.START_SIGNAL)
+        if hasattr(self, 'exp_process') and self.exp_process is not None:
+            self.exp_process.terminate()
+            self.exp_process.wait()
     
     def end_UI(self):
         '''We end run_task.sh process if it is running, the final data plot and remove the communication files'''
@@ -327,33 +359,42 @@ class UI():
         self.check_data_menu_selector()
         self.write_data_menu_selector()
 
+        # Only launch experiment process if not already started
+        if not self.exp_process_started:
+            self.exp_process = subprocess.Popen(["python3", "run_task.sh"])
+            self.exp_process_started = True
+
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
-        self.buttonStop = StopButton(200, 345, 100, 50, Colors.RED)
+        self.buttonStop = StopButton(350, 345, 100, 50, Colors.RED)
         
         self._init_pygame()
         self._init_analyzed_data_file()
         self._init_ui_loop_parameters()
         
-        run = True
-        start_time = time.time()
-        while run:
-            # Run UI update every {update_time_seconds} seconds.
-            if self.buttonStart.activated:
-                current_time = time.time()
-                diff_time = current_time - start_time
-                if diff_time >= self._update_time_seconds:
-                    start_time = time.time()
-                    self.check_for_data_update()
+        try:
+            run = True
+            start_time = time.time()
+            while run:
+                # Run UI update every {update_time_seconds} seconds.
+                if self.buttonStart.activated:
+                    current_time = time.time()
+                    diff_time = current_time - start_time
+                    if diff_time >= self._update_time_seconds:
+                        start_time = time.time()
+                        self.check_for_data_update()
 
-            self._pygame_clock.tick(self._FPS)
-            self.draw()
-            run = self._check_pygame_quit_event()
-            
-            if run:
-                run = self.check_krave_running()
-        
-        self.end_UI()
-        self._quit_pygame()
+                self._pygame_clock.tick(self._FPS)
+                self.draw()
+                run = self._check_pygame_quit_event()
+                
+                if run:
+                    run = self.check_krave_running()
+        except KeyboardInterrupt:
+            print("UI interrupted by user.")
+        finally:
+            # Always clean up communication files, even on error or interrupt
+            self.remove_communication_files()
+            self._quit_pygame()
 
 #FUNCTIONS
 def analyze_data(data, index, initial_index, last_trial, end = False):
@@ -393,6 +434,8 @@ def analyze_data(data, index, initial_index, last_trial, end = False):
 
 def detect_change(source_data_path, time_last_mod):
     """This functions detetcts if there has been a modification in the file with the date"""
+    if source_data_path is None:
+        return False
     time_mod = os.path.getmtime(source_data_path)
     if (time_mod != time_last_mod):
         return True

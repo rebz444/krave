@@ -1,5 +1,6 @@
 import time
 import statistics
+import os
 
 from krave.helper.reward_functions import Reward
 from krave.helper import states, utils
@@ -67,6 +68,8 @@ class Task:
         self.waited_times = []
         self.num_miss_trial = 0
 
+        self.camera.on()
+
     def status(self):
         return f'{self.block_num},{self.session_trial_num},{self.block_trial_num},' \
                f'{self.state},{self.time_bg_drawn},'
@@ -75,9 +78,13 @@ class Task:
         return self.status() + event
 
     def start_session(self):
-        self.camera.on()
-        input(f"running {self.exp_name}, press Enter to start session ..")
-
+        # Wait for start signal from UI
+        start_signal_path = PATHS.START_SIGNAL
+        print("Waiting for start signal from UI...")
+        while not os.path.exists(start_signal_path):
+            time.sleep(1)
+        print("Start signal received! Beginning session.")
+        # Now start the session/trials
         self.running = True
         self.session_start_time = time.time()
         self.data_writer.log(self.get_string('nan,1,session'))
@@ -110,8 +117,7 @@ class Task:
         
         print(self.session_config['mouse'], session_data)
         self.data_writer.end(session_data)
-
-        with open(PATHS.COMMUNICATION_TO_EXP, 'a') as file:
+        with open(PATHS.COMMUNICATION_TO_EXP, 'w') as file:
             file.write('True')
 
     def start_block(self):
@@ -269,12 +275,20 @@ class Task:
 
     def run(self):
         self.start_session()
+        stop_signal_path = PATHS.COMMUNICATION_TO_EXP
         while self.running:
             if self.session_config['record']:
                 self.trigger.square_wave(self.status())
 
             self.handle_licks()
             self.handle_pygame_events()
+
+            if os.path.exists(stop_signal_path):
+                with open(stop_signal_path, 'r') as f:
+                    if f.read().strip() == 'STOP':
+                        print("Received STOP signal from UI. Shutting down.")
+                        self.running = False
+                        self.ending_code = "manual"
 
             if self.state == states.IN_BACKGROUND:
                 self.handle_background_events()

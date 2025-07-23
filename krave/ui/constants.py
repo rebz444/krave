@@ -21,6 +21,7 @@ class PATHS:
     RUN_TASK = f'{BASE}/run_task.sh'
     COMMUNICATION_TO_EXP = f'{BASE}/krave/ui/communications/communication_to_exp.txt'
     COMMUNICATION_TO_UI = f'{BASE}/krave/ui/communications/communication_to_ui.txt'
+    START_SIGNAL = f'{BASE}/krave/ui/communications/start_signal.txt'
 
 class DATA_HEADERS:
     TRIAL = "trial"
