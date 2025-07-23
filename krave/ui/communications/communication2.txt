@@ -1,0 +1,6 @@
+rig1
+regular
+Rebekah
+False
+True
+test
