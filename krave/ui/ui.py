@@ -37,17 +37,6 @@ class UI():
 
         self.exp_process_started = False
 
-    def _prompt_for_data_file(self):
-        """Ask user to provide path to the data file. Always before initializing pygame"""
-        root = tk.Tk()
-        root.withdraw()
-        self._source_data_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("TXT files", ".txt")])
-        root.destroy()
-
-        if not self._source_data_path:
-            raise Exception("No file was selected.")
-        return self._source_data_path
-
     def _init_pygame(self):
         """Initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
@@ -84,28 +73,22 @@ class UI():
         for event in pygame.event.get():
             if pygame.mouse.get_pressed()[0]:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                print(f"Mouse click detected at ({mouse_x}, {mouse_y})")
 
                 if self.buttonStop.pressed(mouse_x, mouse_y) and self.buttonStart.activated:
-                    print("Stop button pressed.")
-                    with open(PATHS.COMMUNICATION_TO_EXP, 'w') as f:
+                    with open(PATHS.STOP_SIGNAL, 'w') as f:
                         f.write('STOP')
                     return self.buttonStop.activate()
                 
                 if self.buttonStart.pressed(mouse_x, mouse_y) and self.buttonStart.activated == False:
-                    print("Start button pressed, activating...")
-                    self._source_data_path = self.buttonStart.activate()
-                    print(f"About to write start signal to: {PATHS.START_SIGNAL}")
+                    self.buttonStart.activate()  # <-- This sets activated to True
                     try:
                         with open(PATHS.START_SIGNAL, 'w') as f:
                             f.write('start')
-                        print("Start signal file written.")
                     except Exception as e:
                         print(f"Failed to write start signal: {e}")
                         
             if event.type == pygame.QUIT:
-                print("Pygame quit event detected.")
-                with open(PATHS.COMMUNICATION_TO_EXP, 'w') as f:
+                with open(PATHS.STOP_SIGNAL, 'w') as f:
                     f.write('STOP')
                 return False
         return True
@@ -114,10 +97,16 @@ class UI():
         """This functions reads the file created with the analized data and plots it
         Maybe more work on legend"""
 
+        try:
+            data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
+        except Exception as e:
+            print(f"Error reading analyzed data file: {e}")
+            return
+
         plt.clf()
 
         #load data
-        data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
+        #data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
 
         #Get the name of the file with now extencion (ex: example.csv --> example)
         file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
@@ -265,18 +254,18 @@ class UI():
     
     def check_krave_running(self):
         '''We check if task.py finishes the taks to end the UI and remove communication files. 
-        Task.py writtes in a file that is finishes and we look for that in each iteration. '''
+        Task.py writes in a file that is finishes and we look for that in each iteration. '''
         
         stop = False
-        if os.path.exists(PATHS.COMMUNICATION_TO_EXP):
-            with open(PATHS.COMMUNICATION_TO_EXP, "r") as file:
+        if os.path.exists(PATHS.STOP_SIGNAL):
+            with open(PATHS.STOP_SIGNAL, "r") as file:
                 stop = file.read().strip()
-
-            if stop == "True":
+            if stop == "True" or stop == "STOP":
+                with open(PATHS.STOP_SIGNAL, "r") as file:
+                    content = file.read()
                 print('----STOP FROM UI----')
-                os.remove(PATHS.COMMUNICATION_TO_EXP)
+                os.remove(PATHS.STOP_SIGNAL)
                 return False
-            
         return True
         
 
@@ -334,6 +323,10 @@ class UI():
             os.remove(PATHS.COMMUNICATION_TO_UI)
         if os.path.exists(PATHS.START_SIGNAL):
             os.remove(PATHS.START_SIGNAL)
+        try:
+            os.remove(PATHS.STOP_SIGNAL)
+        except FileNotFoundError:
+            pass  # It's already gone, that's fine
         if hasattr(self, 'exp_process') and self.exp_process is not None:
             self.exp_process.terminate()
             self.exp_process.wait()
@@ -354,6 +347,7 @@ class UI():
     def run(self):
         """Run main UI thread."""
 
+        self.remove_communication_files()  # Clean up old files before anything else
         self.create_menu_selector()
         self.run_menu_selector()
         self.check_data_menu_selector()
@@ -363,6 +357,20 @@ class UI():
         if not self.exp_process_started:
             self.exp_process = subprocess.Popen(["python3", "run_task.sh"])
             self.exp_process_started = True
+
+        # After launching the experiment process
+        timeout = 10  # seconds
+        start = time.time()
+        while not os.path.exists(PATHS.COMMUNICATION_TO_EXP):
+            if time.time() - start > timeout:
+                raise Exception("Experiment did not write events file path in time.")
+            time.sleep(0.2)
+        with open(PATHS.COMMUNICATION_TO_EXP, "r") as file:
+            # If multiple lines, get the last non-empty line
+            lines = [line.strip() for line in file if line.strip()]
+            if not lines:
+                raise Exception("No events file path found in communication_to_exp.txt")
+            self._source_data_path = lines[-1]
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)
         self.buttonStop = StopButton(350, 345, 100, 50, Colors.RED)

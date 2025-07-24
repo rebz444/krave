@@ -117,7 +117,7 @@ class Task:
         
         print(self.session_config['mouse'], session_data)
         self.data_writer.end(session_data)
-        with open(PATHS.COMMUNICATION_TO_EXP, 'w') as file:
+        with open(PATHS.STOP_SIGNAL, 'w') as file:
             file.write('True')
 
     def start_block(self):
@@ -275,7 +275,7 @@ class Task:
 
     def run(self):
         self.start_session()
-        stop_signal_path = PATHS.COMMUNICATION_TO_EXP
+        stop_signal_path = PATHS.STOP_SIGNAL
         while self.running:
             if self.session_config['record']:
                 self.trigger.square_wave(self.status())
@@ -289,6 +289,7 @@ class Task:
                         print("Received STOP signal from UI. Shutting down.")
                         self.running = False
                         self.ending_code = "manual"
+                        os.remove(stop_signal_path)
 
             if self.state == states.IN_BACKGROUND:
                 self.handle_background_events()
