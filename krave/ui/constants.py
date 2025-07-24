@@ -29,6 +29,7 @@ class DATA_HEADERS:
     BG_REPEAT = "bg_repeat"
     WAIT_TIME = "wait_time"
     MISS_TRIAL = "miss_trial"
+    REWARD_SIZE = "reward_size"
 
 class DATA_WORDS:
     BACKGROUND = "background"

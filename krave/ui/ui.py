@@ -5,18 +5,14 @@ from krave.ui.constants import Colors, PATHS, DEFAULT_FPS, DEFAULT_UPDATE_TIME_S
 from krave.ui.button_start_class import StartButton
 from krave.ui.button_stop_class import StopButton
 from krave.ui.experiment_options import ExperimentOptions
-import tkinter as tk
-from tkinter import filedialog
 import os
 import time
 import warnings
-#Ignore warnings from matplotlib (ser.iloc[pos] is deprecated)
 warnings.simplefilter(action="ignore", category=FutureWarning)
 import csv
 from PIL import Image 
 import sys
 import subprocess
-
 
 class UI():
     """Object to run a UI for a mouse experiment."""
@@ -26,19 +22,20 @@ class UI():
         self._pygame_clock = None
         self._FPS = fps
         self._update_time_seconds = update_time_seconds
-
-        # UI Loop parameters
         self._index = None
         self._last_trial = None
         self._initial_index = None
         self._first_change = None
         self._last_mod_time = None
         self._num_rows = None
-
         self.exp_process_started = False
+        self.session_start_time = None
+        # Store display texts
+        self.session_time_text = "0.0 min"
+        self.mean_text = "Mean wait time: N/A"
+        self.total_rewards_text = "Total rewards: N/A"
 
     def _init_pygame(self):
-        """Initialize pygame (we check if we have already created it)"""
         if not self._pygame_window:    
             os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
             pygame.init()
@@ -49,12 +46,11 @@ class UI():
             self._pygame_window.fill(Colors.WHITE)
     
     def _quit_pygame(self):
-        """End pygame and krave"""
         pygame.quit()
     
     def _init_analyzed_data_file(self):
         """Create real_time_analized_data.csv file and place headers (to store analized data)"""
-        new_headers = [DATA_HEADERS.TRIAL, DATA_HEADERS.BG_REPEAT, DATA_HEADERS.WAIT_TIME, DATA_HEADERS.MISS_TRIAL]
+        new_headers = [DATA_HEADERS.TRIAL, DATA_HEADERS.BG_REPEAT, DATA_HEADERS.WAIT_TIME, DATA_HEADERS.MISS_TRIAL, DATA_HEADERS.REWARD_SIZE]
         with open(PATHS.TEMP_ANALYZED_DATA, "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(new_headers)
@@ -80,7 +76,8 @@ class UI():
                     return self.buttonStop.activate()
                 
                 if self.buttonStart.pressed(mouse_x, mouse_y) and self.buttonStart.activated == False:
-                    self.buttonStart.activate()  # <-- This sets activated to True
+                    self.buttonStart.activate()
+                    self.session_start_time = time.time()
                     try:
                         with open(PATHS.START_SIGNAL, 'w') as f:
                             f.write('start')
@@ -104,22 +101,18 @@ class UI():
             return
 
         plt.clf()
-
-        #load data
-        #data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
-
-        #Get the name of the file with now extencion (ex: example.csv --> example)
-        file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
-
-        max_wait_time = 0 #this helps us generate the top numbers so it is not superposed with the data
-
-        #We plot the wait times. If it is a miss trial (row[-1] == True) then we dont plot the value but we
-        #do a red square indicating is a miss trial
+        
+        if hasattr(self, 'menu_selector'):
+            mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
+        max_wait_time = 0
         for index, row in data.iterrows():
-            if row[-1] == False:
-                plt.plot(row[DATA_HEADERS.TRIAL], row[DATA_HEADERS.WAIT_TIME], linestyle="", marker="o", color = "black")
+            trial_num = int(row[DATA_HEADERS.TRIAL])
+            reward_size = float(row[DATA_HEADERS.REWARD_SIZE]) if not pd.isnull(row[DATA_HEADERS.REWARD_SIZE]) else 0
+            if row[-2] == False:  # MISS_TRIAL is second to last now
+                color = "blue" if reward_size > 0 else "black"
+                plt.plot(trial_num, row[DATA_HEADERS.WAIT_TIME], linestyle="", marker="o", color=color)
             else:
-                plt.axvspan(index - 0.5, index + 0.5, color = "red", alpha = 0.25)
+                plt.axvspan(trial_num - 0.5, trial_num + 0.5, color = "red", alpha = 0.25)
             
             max_wait_time = max(max_wait_time, row[DATA_HEADERS.WAIT_TIME])
 
@@ -132,18 +125,18 @@ class UI():
         plt.plot([0, len(data) - 1],[ h1,h1], color = "black")
         plt.plot([0, len(data) - 1],[ h3,h3], color = "black")
 
-        #Name of axixs and title(name of the file we are getting the data from originally, no analized)
+        #Name of axixs and title (now mouse name)
         plt.xlabel("trial #")
         plt.ylabel("t (s)")
-        plt.title(file_name)
+        plt.title(mouse_name)
 
         #Plot the numbers (bg repeat)
         for index, row in data.iterrows():
-            plt.text(row[DATA_HEADERS.TRIAL], h2, str(row[DATA_HEADERS.BG_REPEAT]), fontsize=12, color='lightseagreen', ha='center', va='center', alpha=0.5)
+            trial_num = int(row[DATA_HEADERS.TRIAL])
+            plt.text(trial_num, h2, str(row[DATA_HEADERS.BG_REPEAT]), fontsize=12, color='lightseagreen', ha='center', va='center', alpha=0.5)
         
-        #TO INDICATE THE LEGENDS OF THE GRAPH WE CREATE A POINT WITH THE SAME COLOR
-        #AND WE ASIGN A LABEL (currenly disablabled, not working the position)
-        plt.plot([],[], color = "black", label = "wait time")
+        plt.plot([],[], color = "black", label = "wait time (no reward)")
+        plt.plot([],[], color = "blue", label = "wait time (reward)")
         plt.plot([],[], color = "lightseagreen", label = "bg repeat", )
         #plt.subplots_adjust(right=0.75) #Edge in the outside of the graph (problem -- graph compressed)
         #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
@@ -166,13 +159,62 @@ class UI():
             imagen_redimensionada.save(FINAL_IMG)
     
     def draw(self):
-        """Loads graph image and draws elements in the pygame window"""
+        """Draws the main UI window, including plot, session time, mean wait time, and total rewards."""
         self._pygame_window.fill(Colors.WHITE)
         if self.buttonStart.activated:
+            # --- Draw the main plot image ---
+            plot_x, plot_y = 25, 0
             img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
-            self._pygame_window.blit(img, (25,0))
-        
-        if (self.buttonStart.activated == False):
+            self._pygame_window.blit(img, (plot_x, plot_y))
+
+            # --- Layout constants ---
+            window_rect = self._pygame_window.get_rect()
+            margin = 10
+            gap_between_text = 6
+
+            # --- Prepare surfaces for bottom center stats ---
+            stats_font = pygame.font.SysFont('Arial', 16, bold=True)
+            mean_surface = stats_font.render(self.mean_text, True, Colors.D_BLUE)
+            rewards_surface = stats_font.render(self.total_rewards_text, True, Colors.D_BLUE)
+
+            # --- Calculate positions for bottom center ---
+            mean_width, mean_height = mean_surface.get_size()
+            rewards_width, rewards_height = rewards_surface.get_size()
+            center_x = window_rect.width // 2
+            rewards_y = window_rect.height - rewards_height - margin
+            mean_y = rewards_y - mean_height - gap_between_text
+            offset = 40  # Move left by 40 pixels
+            mean_x = center_x - mean_width // 2 - offset
+            rewards_x = center_x - rewards_width // 2 - offset
+
+            # --- Draw mean wait time and total rewards (stacked, centered) ---
+            self._pygame_window.blit(mean_surface, (mean_x, mean_y))
+            self._pygame_window.blit(rewards_surface, (rewards_x, rewards_y))
+
+            # --- Draw session time at bottom left, above total rewards ---
+            time_font = pygame.font.SysFont('Arial', 12)
+            time_surface = time_font.render(self.session_time_text, True, Colors.D_BLUE)
+            time_height = time_surface.get_height()
+            time_y = rewards_y - time_height - 4  # 4px gap above rewards
+            self._pygame_window.blit(time_surface, (margin, time_y))
+
+            # --- Draw the stop button ---
+            self.buttonStop.draw("STOP", self._pygame_window)
+
+        # Draw experiment setup parameters and buttons if not running
+        elif hasattr(self, 'menu_selector'):
+            param_font = pygame.font.SysFont('Arial', 18)
+            params = [
+                f"Rig: {self.menu_selector.rig_var}",
+                f"Training: {self.menu_selector.training_var}",
+                f"Trainer: {self.menu_selector.trainer_var}",
+                f"Mouse: {getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', ''))}",
+                f"Record: {self.menu_selector.record_var.get() if hasattr(self.menu_selector.record_var, 'get') else self.menu_selector.record_var}",
+                f"Forward file: {self.menu_selector.forward_file_var.get() if hasattr(self.menu_selector.forward_file_var, 'get') else self.menu_selector.forward_file_var}"
+            ]
+            for i, param in enumerate(params):
+                text_surface = param_font.render(param, True, Colors.BLACK)
+                self._pygame_window.blit(text_surface, (30, 30 + i * 28))
             self.buttonStart.draw("START", self._pygame_window)
         else:
             self.buttonStop.draw("STOP", self._pygame_window)
@@ -203,55 +245,67 @@ class UI():
             return
 
         if detect_change(self._source_data_path, self._last_mod_time):
-            """we do not analyze the the first change because it is the headers creation and that is not data to analyze (otherwise error)"""
             if self._first_change:
-                #Get new mod date
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
-
-                #Load data, num of rows and diference from the index we are in and the num of rows
                 data = self.read_data_file_csv()
-
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
-
                 new_index = 0
-
-                #Iterate throught all the new rows
                 for i in range(diff):
                     new_index = self._index + 1 + i
                     output_analyzed_data = analyze_data(data, new_index, self._initial_index, self._last_trial)
-
                     if output_analyzed_data:
                         self._initial_index = new_index
-
-                        #We dont want to plot the trial -1 (isnt a real trial) 
                         if self._last_trial != -1:
-
-                            #We add the new analized data to the file to plot
                             self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
-                            
-                            #We plot the data from the analized file
                             self.plot_data()
                         self._last_trial += 1
-                
                 self._index = new_index
-
             else:
-                # On the first change, plot an empty plot with the correct axis and title
                 self._first_change = True
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
-                # Get the file name for the title
-                file_name = os.path.splitext(os.path.basename(self._source_data_path))[0]
+                if hasattr(self, 'menu_selector'):
+                    mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
                 plt.xlabel("trial #")
                 plt.ylabel("t (s)")
-                plt.title(file_name)
+                plt.title(mouse_name)
                 plt.plot([], [], color="black", label="wait time")
                 plt.plot([], [], color="lightseagreen", label="bg repeat")
+                plt.xlim(left=0)
                 plt.savefig(PATHS.TEMP_IMG)
                 img = Image.open(PATHS.TEMP_IMG)
                 img = img.resize((450, 350))
                 img.save(PATHS.TEMP_IMG_RESIZED)
                 self._index += 1
-    
+
+            # --- Update display texts here ---
+            # Session time (minutes)
+            if self.session_start_time is not None:
+                elapsed_seconds = time.time() - self.session_start_time
+                elapsed_minutes = elapsed_seconds / 60
+                self.session_time_text = f"{elapsed_minutes:.1f} min"
+            else:
+                self.session_time_text = "0.0 min"
+            # Mean wait time and total rewards
+            try:
+                data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter=",")
+                wait_times = data[DATA_HEADERS.WAIT_TIME]
+                wait_times = pd.to_numeric(wait_times, errors='coerce')
+                valid_waits = wait_times[wait_times > 0].dropna()
+                if len(valid_waits) > 0:
+                    mean_wait = valid_waits.mean()
+                    self.mean_text = f"Mean wait time: {mean_wait:.0f} s"
+                else:
+                    self.mean_text = "Mean wait time: N/A"
+                if DATA_HEADERS.REWARD_SIZE in data.columns:
+                    reward_sizes = pd.to_numeric(data[DATA_HEADERS.REWARD_SIZE], errors='coerce').fillna(0)
+                    total_rewards = reward_sizes.sum()
+                    self.total_rewards_text = f"Total rewards: {total_rewards:.2f}"
+                else:
+                    self.total_rewards_text = "Total rewards: N/A"
+            except Exception as e:
+                self.mean_text = "Mean wait time: N/A"
+                self.total_rewards_text = "Total rewards: N/A"
+
     def check_krave_running(self):
         '''We check if task.py finishes the taks to end the UI and remove communication files. 
         Task.py writes in a file that is finishes and we look for that in each iteration. '''
@@ -306,12 +360,8 @@ class UI():
         self._index = self._num_rows - 2
         output_analyzed_data = analyze_data(data, self._index, self._initial_index, self._last_trial, end = True)
         if output_analyzed_data:
-                    #We dont want to plot the trial -1 (isnt a real trial) 
-                    if self._last_trial != -1:
-
-                        #We add the new analized data to the file to plot
-                        self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
-
+            if self._last_trial != -1:
+                self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
         self.plot_data(end = True)
 
     def remove_communication_files(self):
@@ -326,7 +376,7 @@ class UI():
         try:
             os.remove(PATHS.STOP_SIGNAL)
         except FileNotFoundError:
-            pass  # It's already gone, that's fine
+            pass
         if hasattr(self, 'exp_process') and self.exp_process is not None:
             self.exp_process.terminate()
             self.exp_process.wait()
@@ -407,7 +457,7 @@ class UI():
 #FUNCTIONS
 def analyze_data(data, index, initial_index, last_trial, end = False):
     """check in the self._source_data_path in the index row if we start a new trial. 
-    if we started one then we check if it's a miss trial, the wait time and the backgrounds"""
+    if we started one then we check if it's a miss trial, the wait time, the backgrounds, and the reward size"""
 
     actual_row = data.iloc[index]
     actual_trial = actual_row[3]
@@ -415,6 +465,7 @@ def analyze_data(data, index, initial_index, last_trial, end = False):
     consumption = False
     wait_time = 0
     miss_trial = False
+    reward_size = 0
 
     if (actual_trial != last_trial or end):
         number_background = 0
@@ -424,21 +475,19 @@ def analyze_data(data, index, initial_index, last_trial, end = False):
         final_index = index - 1
 
         data_interval = data[initial_index:final_index + 1] #  Interval of data on 1 trial
-        for index, row in data_interval.iterrows(): #  Iterate for each row checking the data of the trial
+        for idx, row in data_interval.iterrows(): #  Iterate for each row checking the data of the trial
             if (row[-1] == DATA_WORDS.BACKGROUND):
                 number_background += 1
-            
             elif (row[-1] == DATA_WORDS.WAIT):
                 initial_time = row[0]
-            
             elif (row[-1] == DATA_WORDS.CONSUMPTION):
                 final_time = row[0]
                 wait_time = final_time - initial_time
                 consumption = True
-        
+                reward_size = row[6]  # 6th column (index 5) is reward_size, but your sample shows 7th (index 6)
         if (consumption == False):
-                miss_trial = True
-        return([last_trial, number_background, wait_time, miss_trial])
+            miss_trial = True
+        return([last_trial, number_background, wait_time, miss_trial, reward_size])
 
 def detect_change(source_data_path, time_last_mod):
     """This functions detetcts if there has been a modification in the file with the date"""

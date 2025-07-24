@@ -289,7 +289,8 @@ class Task:
                         print("Received STOP signal from UI. Shutting down.")
                         self.running = False
                         self.ending_code = "manual"
-                        os.remove(stop_signal_path)
+                        if os.path.exists(stop_signal_path):
+                            os.remove(stop_signal_path)
 
             if self.state == states.IN_BACKGROUND:
                 self.handle_background_events()
