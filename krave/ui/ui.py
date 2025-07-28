@@ -344,12 +344,12 @@ class UI():
 
         with open(PATHS.COMMUNICATION_FROM_UI, 'w') as file:
             writer = csv.writer(file)
-            writer.writerow([self.menu_selector.rig_name])
-            writer.writerow([self.menu_selector.training])
-            writer.writerow([self.menu_selector.trainer])
-            writer.writerow([self.menu_selector.record])
-            writer.writerow([self.menu_selector.forward_file])
-            writer.writerow([self.menu_selector.mouse])
+            writer.writerow([self.menu_selector.rig_var])
+            writer.writerow([self.menu_selector.training_var])
+            writer.writerow([self.menu_selector.trainer_var])
+            writer.writerow([str(self.menu_selector.record_var.get())])
+            writer.writerow([str(self.menu_selector.forward_file_var.get())])
+            writer.writerow([self.menu_selector.text_input_var])
         '''run_task.sh will read this data'''
     
     def final_data_plot(self):
