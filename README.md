@@ -114,9 +114,10 @@ sudo raspi-config
 sudo reboot
 
 sudo apt update && sudo apt upgrade
-sudo apt install python3-pip python3-dev python3-pygame python3-tk python3-pil \
+sudo apt install python3-pip python3-dev python3-tk python3-pil \
     libatlas-base-dev libopenjp2-7 libtiff5 libjpeg-dev zlib1g-dev libfreetype6-dev \
-    libpng-dev libffi-dev libssl-dev build-essential
+    libpng-dev libffi-dev libssl-dev build-essential libsdl2-ttf-2.0-0 \
+    libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 ```
 
 ### 2. Clone the Repository
@@ -139,12 +140,6 @@ source krave-env/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-
-> **Note:** If using a Raspberry Pi, install `pygame` via:
->
-> ```bash
-> pip install pygame==2.6.1 --only-binary :all:
-> ```
 
 ---
 ## Troubleshooting

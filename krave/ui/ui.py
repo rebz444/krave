@@ -342,14 +342,15 @@ class UI():
         '''Write the data of the conditions of the experiment from the menu_selector in communications2 file. 
         run_task.sh will read this data'''
 
-        with open(PATHS.COMMUNICATION_TO_UI, 'w') as file:
-                    writer = csv.writer(file)
-                    writer.writerow([self.menu_selector.rig_var])
-                    writer.writerow([self.menu_selector.training_var])
-                    writer.writerow([self.menu_selector.trainer_var])
-                    writer.writerow([str(self.menu_selector.record_var.get())])
-                    writer.writerow([str(self.menu_selector.forward_file_var.get())])
-                    writer.writerow([self.menu_selector.text_input_var])
+        with open(PATHS.COMMUNICATION_FROM_UI, 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.menu_selector.rig_name])
+            writer.writerow([self.menu_selector.training])
+            writer.writerow([self.menu_selector.trainer])
+            writer.writerow([self.menu_selector.record])
+            writer.writerow([self.menu_selector.forward_file])
+            writer.writerow([self.menu_selector.mouse])
+        '''run_task.sh will read this data'''
     
     def final_data_plot(self):
         '''We do a final analyze and plot of all the data with the last trial'''
@@ -367,10 +368,10 @@ class UI():
     def remove_communication_files(self):
         '''We remove the communication files to avoid overwrite data and errors'''
 
-        if os.path.exists(PATHS.COMMUNICATION_TO_EXP):
-            os.remove(PATHS.COMMUNICATION_TO_EXP)
-        if os.path.exists(PATHS.COMMUNICATION_TO_UI):
-            os.remove(PATHS.COMMUNICATION_TO_UI)
+        if os.path.exists(PATHS.COMMUNICATION_FROM_EXP):
+            os.remove(PATHS.COMMUNICATION_FROM_EXP)
+        if os.path.exists(PATHS.COMMUNICATION_FROM_UI):
+            os.remove(PATHS.COMMUNICATION_FROM_UI)
         if os.path.exists(PATHS.START_SIGNAL):
             os.remove(PATHS.START_SIGNAL)
         try:
@@ -411,15 +412,15 @@ class UI():
         # After launching the experiment process
         timeout = 10  # seconds
         start = time.time()
-        while not os.path.exists(PATHS.COMMUNICATION_TO_EXP):
+        while not os.path.exists(PATHS.COMMUNICATION_FROM_EXP):
             if time.time() - start > timeout:
                 raise Exception("Experiment did not write events file path in time.")
             time.sleep(0.2)
-        with open(PATHS.COMMUNICATION_TO_EXP, "r") as file:
+        with open(PATHS.COMMUNICATION_FROM_EXP, "r") as file:
             # If multiple lines, get the last non-empty line
             lines = [line.strip() for line in file if line.strip()]
             if not lines:
-                raise Exception("No events file path found in communication_to_exp.txt")
+                raise Exception("No events file path found in communication_from_exp.txt")
             self._source_data_path = lines[-1]
 
         self.buttonStart = StartButton(200, 345, 100, 50, Colors.L_BLUE)

@@ -19,8 +19,8 @@ class PATHS:
     TEMP_IMG = f'{BASE}/krave/ui/images/graph_analyzed_data.png'
     TEMP_IMG_RESIZED = f'{BASE}/krave/ui/images/graph_analyzed_data_resized.png'
     RUN_TASK = f'{BASE}/run_task.sh'
-    COMMUNICATION_TO_EXP = f'{BASE}/krave/ui/communications/communication_to_exp.txt'
-    COMMUNICATION_TO_UI = f'{BASE}/krave/ui/communications/communication_to_ui.txt'
+    COMMUNICATION_FROM_EXP = f'{BASE}/krave/ui/communications/communication_from_exp.txt'
+    COMMUNICATION_FROM_UI = f'{BASE}/krave/ui/communications/communication_from_ui.txt'
     START_SIGNAL = f'{BASE}/krave/ui/communications/start_signal.txt'
     STOP_SIGNAL = f'{BASE}/krave/ui/communications/stop_signal.txt'
 

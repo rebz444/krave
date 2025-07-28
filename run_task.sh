@@ -7,22 +7,22 @@ import csv
 import time
 
 def get_experiment_options_data():
-    '''Read data from communication_to_ui.txt written by UI.py and provided by the tkinter selection of conditions script'''
+    '''Read data from communication_from_ui.txt written by UI.py and provided by the tkinter selection of conditions script'''
     
     options = []
 
     timeout = 10  # seconds
     start = time.time()
-    while not os.path.exists(PATHS.COMMUNICATION_TO_UI):
+    while not os.path.exists(PATHS.COMMUNICATION_FROM_UI):
         if time.time() - start > timeout:
             print("Data Error: Params file not found after waiting.")
             sys.exit(1)
         time.sleep(0.2)
-    with open(PATHS.COMMUNICATION_TO_UI, "r") as file:
+    with open(PATHS.COMMUNICATION_FROM_UI, "r") as file:
         reader = csv.reader(file)
         for row in reader:
             options.append(row)
-    os.remove(PATHS.COMMUNICATION_TO_UI)
+    os.remove(PATHS.COMMUNICATION_FROM_UI)
 
     for i in range(len(options)):
         options[i] = options[i][0]
