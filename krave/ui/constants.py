@@ -37,6 +37,6 @@ class DATA_WORDS:
     CONSUMPTION = "consumption"
 
 DEFAULT_FPS = 15
-DEFAULT_UPDATE_TIME_SECONDS = 2
+DEFAULT_UPDATE_TIME_SECONDS = 5  # Increased from 2 to 5 seconds
 
 #TODO use https://docs.python.org/3/library/importlib.resources.html to find paths to different resources files

@@ -143,6 +143,7 @@ class UI():
 
         try:
             plt.savefig(PATHS.TEMP_IMG)
+            plt.close('all')  # Clear matplotlib cache to prevent memory leaks
         except Exception as e:
             print(f"Error when saving image: {e}")
 
@@ -249,6 +250,8 @@ class UI():
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
                 data = self.read_data_file_csv()
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
+                print(f"[DEBUG] Processing {diff} new rows, current index: {self._index}")
+                
                 new_index = 0
                 for i in range(diff):
                     new_index = self._index + 1 + i
@@ -299,10 +302,11 @@ class UI():
                 if DATA_HEADERS.REWARD_SIZE in data.columns:
                     reward_sizes = pd.to_numeric(data[DATA_HEADERS.REWARD_SIZE], errors='coerce').fillna(0)
                     total_rewards = reward_sizes.sum()
-                    self.total_rewards_text = f"Total rewards: {total_rewards:.2f}"
+                    self.total_rewards_text = f"Total rewards: {int(total_rewards)}"
                 else:
                     self.total_rewards_text = "Total rewards: N/A"
             except Exception as e:
+                print(f"[DEBUG] Error updating display texts: {e}")
                 self.mean_text = "Mean wait time: N/A"
                 self.total_rewards_text = "Total rewards: N/A"
 
