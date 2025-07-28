@@ -2,128 +2,190 @@
 
 ## Overview
 
-KRAVE is a modular platform for running behavioral neuroscience experiments. It integrates hardware control (cameras, pumps, sensors), experiment logic, data collection, and a user interface for experimenters.
+**KRAVE** is a modular, extensible platform for running neuroscience behavioral experiments. It integrates experiment logic, hardware control, data collection, and an intuitive user interface—designed for fast iteration and stable deployment on Raspberry Pi systems.
+
+---
 
 ## Features
-- **Experiment Control:** Flexible task logic for shaping and regular training sessions.
-- **Hardware Integration:** Supports hardware components including visual displays, sounds, cameras, syringe pumps, lick sensors, and ttl pulses sent to other modules.
-- **Data Collection:** Automated data writing, metadata management, and file forwarding.
-- **User Interface:** Pygame/Tkinter-based UI for experiment setup, monitoring, and data visualization.
-- **Configuration:** JSON-based configuration for experiments and cohorts.
+
+- **Flexible Experiment Logic**\
+  Easily define shaping and training tasks using a modular state machine framework.
+
+- **Hardware Integration**\
+  Supports:
+
+  - Cameras (Basler, PiCamera)
+  - Visual and auditory cues
+  - TTL pulse delivery
+  - Syringe pumps
+  - Lick and movement sensors
+
+- **Automated Data Collection**\
+  Saves raw and processed data, writes metadata, and supports automatic file transfer to central servers.
+
+- **User Interface**\
+  Pygame/Tkinter-based GUI for experiment control, monitoring, and real-time visualization.
+
+- **Configuration System**\
+  Experiments and cohorts configured via JSON files for ease of replication and scalability.
+
+---
 
 ## Directory Structure
-- `krave/experiment/` — Core experiment logic and hardware testing
-- `krave/hardware/` — Hardware interface modules (cameras, spout, sound, visual)
-- `krave/helper/` — Utility functions, reward logic, state management
-- `krave/output/` — Data writing and transfer
-- `krave/ui/` — User interface, buttons, experiment options, data visualization
-- `krave/config/` — Experiment and cohort configuration files
-- Top-level scripts: `run_task.py`, `calibrate_pump.py`, `free_reward.py`, etc.
 
+```text
+krave/
+├── experiment/       # Core experiment logic and task control
+├── hardware/         # Interfaces to physical devices (camera, sensors, pumps, etc.)
+├── helper/           # Utility functions and state logic
+├── output/           # Data writing and syncing
+├── ui/               # Graphical user interface and plotting
+├── config/           # JSON configuration files
+├── run_task.sh       # Launch an experiment session
+├── calibrate_pump.py # Run pump calibration
+├── free_reward.py    # Deliver a free reward (debugging/training)
+```
+
+---
 
 ## Usage
 
-### 1. Configure Experiment
-- Edit or create experiment config files in `krave/config/` as needed.
-- Set up hardware configuration in `krave/hardware/hardware.json`.
+### 1. Configure the Experiment
 
-### 2. Start the User Interface
+- Edit or create experiment configurations in `krave/config/`
+- Edit hardware settings in `krave/hardware/hardware.json`
 
-The main UI allows you to select experiment options, start/stop sessions, and visualize data.
+### 2. Start the UI
 
 ```bash
 python -m krave.ui.ui
 ```
 
-### 3. Run an Experiment Session
-
-The main experiment logic is run via:
+### 3. Run an Experiment
 
 ```bash
 ./run_task.sh
 ```
 
-Or directly:
-
-```bash
-python run_task.py
-```
-
-### 4. Calibrate Pump
+### 4. Calibrate the Pump
 
 ```bash
 python calibrate_pump.py
 ```
 
-### 5. Free Reward
+### 5. Deliver Free Reward
 
 ```bash
 python free_reward.py
 ```
 
+---
+
 ## Data Output
-- Data and metadata are written to folders specified in `krave/output/data_writer_config.json`.
-- Analyzed data and real-time data are available in `krave/ui/analized_data/`.
+
+- Output data is saved to folders specified in `krave/output/data_writer_config.json`
+- Real-time and post-session analysis appears in `krave/ui/analized_data/`
+
+---
 
 ## Customization
-- Add new experiment types by creating new config files in `krave/config/` and updating logic in `krave/experiment/task.py` as needed.
-- Hardware modules can be extended in `krave/hardware/`.
 
-## Troubleshooting
-- Ensure all hardware is connected and configured as per `hardware.json`.
-- For GPIO or camera errors, check permissions and hardware connections.
-- Use Python 3.7–3.9 for best compatibility with dependencies.
+- To add new task types:\
+  Create a new config file in `krave/config/` and extend the logic in `krave/experiment/task.py`
+
+- To add new hardware modules:\
+  Add a device interface in `krave/hardware/` and update `hardware.json` accordingly
+
+---
 
 ## Raspberry Pi Setup
 
-To set up KRAVE on a Raspberry Pi (recommended: Raspberry Pi 4 Model B, running Raspberry Pi OS):
+### Recommended Hardware
 
-### 1. Prerequisites
-- Ensure your Pi is running Raspberry Pi OS (legacy version, bullseye 32 bit full).
-- Connect all required hardware (cameras, pumps, sensors, etc.).
-- Enable the camera interface via `raspi-config` if using PiCamera:
-  ```bash
-  sudo raspi-config
-  # Interfacing Options > Camera > Enable
-  sudo reboot
-  ```
-- Update your system:
-  ```bash
-  sudo apt-get update && sudo apt-get upgrade
-  ```
-- Install system dependencies:
-  ```bash
-  sudo apt-get install python3-pip python3-dev python3-pygame python3-tk python3-pil libatlas-base-dev libopenjp2-7 libtiff5
-  ```
+- Raspberry Pi 4 Model B (2GB+)
+- Raspberry Pi OS Legacy (32-bit, Bullseye preferred)
+- Connected hardware (camera, pumps, sensors, etc.)
+
+### 1. System Preparation
+
+```bash
+sudo raspi-config
+# Enable camera: Interfacing Options > Camera > Enable
+sudo reboot
+
+sudo apt update && sudo apt upgrade
+sudo apt install python3-pip python3-dev python3-pygame python3-tk python3-pil \
+    libatlas-base-dev libopenjp2-7 libtiff5 libjpeg-dev zlib1g-dev libfreetype6-dev \
+    libpng-dev libffi-dev libssl-dev build-essential
+```
 
 ### 2. Clone the Repository
+
 ```bash
 git clone https://github.com/yourusername/krave.git
 cd krave
 ```
 
 ### 3. Set Up Python Environment
-- (Optional but recommended) Create a virtual environment:
-  ```bash
-  python3 -m venv KRAVE
-  source venv/bin/activate
-  ```
+
+```bash
+python3 -m venv krave-env
+source krave-env/bin/activate
+```
 
 ### 4. Install Python Dependencies
+
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 5. Run the UI or Experiment
-- Start the UI:
+> **Note:** If using a Raspberry Pi, install `pygame` via:
+>
+> ```bash
+> pip install pygame==2.6.1 --only-binary :all:
+> ```
+
+---
+## Troubleshooting
+
+- **🧼 Cleaned Out Broken Environments**\
+  If you're experiencing version conflicts or C-extension import errors (e.g. NumPy or pandas):
+
   ```bash
-  python -m krave.ui.ui
+  rm -rf ~/.local/lib/python3.9/site-packages/*
   ```
-- Or run an experiment session:
+
+  Avoid mixing `sudo pip`, user installs, and venvs.
+
+- **⚙️ Missing SDL or Audio Support (Pygame Fails to Build)**\
+  Install development headers for SDL/audio/video before building `pygame`:
+
   ```bash
-  ./run_task.sh
+  sudo apt install libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev \
+                   libsmpeg-dev libportmidi-dev libavformat-dev libswscale-dev \
+                   libjpeg-dev libfreetype6-dev
   ```
+
+- **Missing GPIO**:\
+  Run `pip install RPi.GPIO gpiozero`
+
+- **Pandas/NumPy Compatibility**:\
+  Use `numpy==1.24.4` and `pandas==2.1.4` for compatibility with Raspberry Pi.
+
+- **Camera Not Detected**:\
+  Ensure it's enabled in `raspi-config` and working with `raspistill`.
+
+- **Permissions**:\
+  Some hardware (e.g., GPIO or USB cameras) may require root access or udev rules.
+
+- **"Events file not written in time" error**:\
+  Indicates the experiment script did not start or failed to create the expected file—check `run_task.sh` and hardware logs.
+
+---
 
 ## Contact
 
-For questions or contributions, contact yzhan485@jhmi.edu. 
+Maintainer: Rebekah Zhang\
+📧 [yzhan485@jhmi.edu](mailto\:yzhan485@jhmi.edu)
+
