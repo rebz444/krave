@@ -95,7 +95,7 @@ class UI():
         Maybe more work on legend"""
 
         try:
-            data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",")
+            data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",", low_memory=False)
         except Exception as e:
             print(f"Error reading analyzed data file: {e}")
             return
@@ -162,74 +162,105 @@ class UI():
     def draw(self):
         """Draws the main UI window, including plot, session time, mean wait time, and total rewards."""
         self._pygame_window.fill(Colors.WHITE)
+        
         if self.buttonStart.activated:
-            # --- Draw the main plot image ---
-            plot_x, plot_y = 25, 0
-            img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
-            self._pygame_window.blit(img, (plot_x, plot_y))
-
-            # --- Layout constants ---
-            window_rect = self._pygame_window.get_rect()
-            margin = 10
-            gap_between_text = 6
-
-            # --- Prepare surfaces for bottom center stats ---
-            stats_font = pygame.font.SysFont('Arial', 16, bold=True)
-            mean_surface = stats_font.render(self.mean_text, True, Colors.D_BLUE)
-            rewards_surface = stats_font.render(self.total_rewards_text, True, Colors.D_BLUE)
-
-            # --- Calculate positions for bottom center ---
-            mean_width, mean_height = mean_surface.get_size()
-            rewards_width, rewards_height = rewards_surface.get_size()
-            center_x = window_rect.width // 2
-            rewards_y = window_rect.height - rewards_height - margin
-            mean_y = rewards_y - mean_height - gap_between_text
-            offset = 40  # Move left by 40 pixels
-            mean_x = center_x - mean_width // 2 - offset
-            rewards_x = center_x - rewards_width // 2 - offset
-
-            # --- Draw mean wait time and total rewards (stacked, centered) ---
-            self._pygame_window.blit(mean_surface, (mean_x, mean_y))
-            self._pygame_window.blit(rewards_surface, (rewards_x, rewards_y))
-
-            # --- Draw session time at bottom left, above total rewards ---
-            time_font = pygame.font.SysFont('Arial', 12)
-            time_surface = time_font.render(self.session_time_text, True, Colors.D_BLUE)
-            time_height = time_surface.get_height()
-            time_y = rewards_y - time_height - 4  # 4px gap above rewards
-            self._pygame_window.blit(time_surface, (margin, time_y))
-
-            # --- Draw the stop button ---
-            self.buttonStop.draw("STOP", self._pygame_window)
-
-        # Draw experiment setup parameters and buttons if not running
+            self._draw_running_interface()
         elif hasattr(self, 'menu_selector'):
-            param_font = pygame.font.SysFont('Arial', 18)
-            params = [
-                f"Rig: {self.menu_selector.rig_var}",
-                f"Training: {self.menu_selector.training_var}",
-                f"Trainer: {self.menu_selector.trainer_var}",
-                f"Mouse: {getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', ''))}",
-                f"Record: {self.menu_selector.record_var.get() if hasattr(self.menu_selector.record_var, 'get') else self.menu_selector.record_var}",
-                f"Forward file: {self.menu_selector.forward_file_var.get() if hasattr(self.menu_selector.forward_file_var, 'get') else self.menu_selector.forward_file_var}"
-            ]
-            for i, param in enumerate(params):
-                text_surface = param_font.render(param, True, Colors.BLACK)
-                self._pygame_window.blit(text_surface, (30, 30 + i * 28))
-            self.buttonStart.draw("START", self._pygame_window)
+            self._draw_setup_interface()
         else:
-            self.buttonStop.draw("STOP", self._pygame_window)
-
+            self._draw_stop_only_interface()
+            
         pygame.display.update()
+
+    def _draw_running_interface(self):
+        """Draw the interface when experiment is running."""
+        self._draw_main_plot()
+        self._draw_session_stats()
+        self._draw_session_time()
+        self.buttonStop.draw("STOP", self._pygame_window)
+
+    def _draw_setup_interface(self):
+        """Draw the interface when in setup mode."""
+        self._draw_experiment_parameters()
+        self.buttonStart.draw("START", self._pygame_window)
+
+    def _draw_stop_only_interface(self):
+        """Draw interface with only stop button."""
+        self.buttonStop.draw("STOP", self._pygame_window)
+
+    def _draw_main_plot(self):
+        """Draw the main plot image."""
+        plot_x, plot_y = 25, 0
+        img = pygame.image.load(PATHS.TEMP_IMG_RESIZED)
+        self._pygame_window.blit(img, (plot_x, plot_y))
+
+    def _draw_session_stats(self):
+        """Draw mean wait time and total rewards statistics."""
+        stats_font = pygame.font.SysFont('Arial', 16, bold=True)
+        mean_surface = stats_font.render(self.mean_text, True, Colors.D_BLUE)
+        rewards_surface = stats_font.render(self.total_rewards_text, True, Colors.D_BLUE)
+        
+        # Position stats at bottom center
+        self._pygame_window.blit(mean_surface, (120, 355))
+        self._pygame_window.blit(rewards_surface, (120, 375))
+
+    def _draw_session_time(self):
+        """Draw session time and current trial number at bottom left."""
+        time_font = pygame.font.SysFont('Arial', 12)
+        time_surface = time_font.render(self.session_time_text, True, Colors.D_BLUE)
+        self._pygame_window.blit(time_surface, (10, 355))
+        
+        # Draw current trial number underneath
+        trial_text = f"Trial: {self._last_trial if self._last_trial is not None else 0}"
+        trial_surface = time_font.render(trial_text, True, Colors.D_BLUE)
+        self._pygame_window.blit(trial_surface, (10, 370))
+
+    def _draw_experiment_parameters(self):
+        """Draw experiment setup parameters."""
+        param_font = pygame.font.SysFont('Arial', 18)
+        params = self._get_experiment_parameters()
+        
+        for i, param in enumerate(params):
+            text_surface = param_font.render(param, True, Colors.BLACK)
+            self._pygame_window.blit(text_surface, (30, 30 + i * 28))
+
+    def _get_experiment_parameters(self):
+        """Get formatted experiment parameters for display."""
+        return [
+            f"Rig: {self.menu_selector.rig_var}",
+            f"Training: {self.menu_selector.training_var}",
+            f"Trainer: {self.menu_selector.trainer_var}",
+            f"Mouse: {getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', ''))}",
+            f"Record: {self._get_record_value()}",
+            f"Forward file: {self._get_forward_file_value()}"
+        ]
+
+    def _get_record_value(self):
+        """Get the record value safely."""
+        record_var = self.menu_selector.record_var
+        return record_var.get() if hasattr(record_var, 'get') else record_var
+
+    def _get_forward_file_value(self):
+        """Get the forward file value safely."""
+        forward_file_var = self.menu_selector.forward_file_var
+        return forward_file_var.get() if hasattr(forward_file_var, 'get') else forward_file_var
     
     def read_data_file_csv(self):
         if not self._source_data_path:
             print("No data file path set, skipping read_data_file_csv.")
             return None
-        reader = csv.reader(open(self._source_data_path))
-        self._num_rows = len(list(reader))
-        data = pd.read_csv(self._source_data_path, delimiter = ",")
-        return data
+        
+        try:
+            # Single read to avoid race conditions
+            data = pd.read_csv(self._source_data_path, delimiter = ",", low_memory=False)
+            old_num_rows = self._num_rows
+            self._num_rows = len(data)  # Use DataFrame length instead of separate file read
+            if old_num_rows is not None and old_num_rows != self._num_rows:
+                print(f"[DEBUG] File size updated: {old_num_rows} → {self._num_rows} rows")
+            return data
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            return None
     
     def write_TEMP_ANALYZED_DATA_csv(self, output_analyzed_data):
         with open(PATHS.TEMP_ANALYZED_DATA, "a", newline="") as file:
@@ -249,6 +280,22 @@ class UI():
             if self._first_change:
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
                 data = self.read_data_file_csv()
+                
+                # Check for file reindexing (index went backwards)
+                if self._num_rows < self._index:
+                    print(f"[DEBUG] File reindexed! Previous index: {self._index}, Current file size: {self._num_rows}")
+                    print(f"[DEBUG] Resetting to handle file restart...")
+                    # Reset tracking variables
+                    self._index = 0
+                    self._last_trial = -1
+                    self._initial_index = 1
+                    # Clear invalid analyzed data
+                    if os.path.exists(PATHS.TEMP_ANALYZED_DATA):
+                        os.remove(PATHS.TEMP_ANALYZED_DATA)
+                    if os.path.exists(PATHS.TEMP_IMG_RESIZED):
+                        os.remove(PATHS.TEMP_IMG_RESIZED)
+                    return
+                
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
                 print(f"[DEBUG] Processing {diff} new rows, current index: {self._index}")
                 
@@ -290,7 +337,7 @@ class UI():
                 self.session_time_text = "0.0 min"
             # Mean wait time and total rewards
             try:
-                data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter=",")
+                data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter=",", low_memory=False)
                 wait_times = data[DATA_HEADERS.WAIT_TIME]
                 wait_times = pd.to_numeric(wait_times, errors='coerce')
                 valid_waits = wait_times[wait_times > 0].dropna()

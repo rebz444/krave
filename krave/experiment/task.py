@@ -139,7 +139,7 @@ class Task:
         self.time_bg = statistics.fmean(self.trial_list)
 
         print(f"block {self.block_num} with bg_time {self.time_bg:.2f} sec "
-              f"starts at {self.block_start_time - self.session_start_time:.2f} seconds")
+              f"starts at {(self.block_start_time - self.session_start_time) / 60:.1f} minutes")
 
         self.start_trial()
 
@@ -160,7 +160,7 @@ class Task:
 
         self.data_writer.log(self.get_string('nan,1,trial'))
         print(f"block {self.block_num} trial {self.block_trial_num, self.session_trial_num} bg_time "
-              f"{self.time_bg_drawn:.2f}s starts at {self.trial_start_time - self.session_start_time:.2f} seconds")
+              f"{self.time_bg_drawn:.2f}s starts at {(self.trial_start_time - self.session_start_time) / 60:.1f} minutes")
 
         if self.session_config['training'] == "shaping":
             self.time_wait_random = self.random_list[self.block_trial_num]
