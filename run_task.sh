@@ -37,6 +37,32 @@ def get_experiment_options_data():
     else:
         options[4] = False
 
+    # Parse override parameters
+    max_reward_override = None
+    max_time_override = None
+    max_missed_trial_override = None
+    
+    if len(options) >= 7 and options[6].strip():  # max_reward_override
+        try:
+            max_reward_override = float(options[6]) if '.' in options[6] else int(options[6])
+        except ValueError:
+            print(f"Warning: Invalid max_reward_override value: {options[6]}")
+    
+    if len(options) >= 8 and options[7].strip():  # max_time_override
+        try:
+            max_time_override = float(options[7]) if '.' in options[7] else int(options[7])
+        except ValueError:
+            print(f"Warning: Invalid max_time_override value: {options[7]}")
+    
+    if len(options) >= 9 and options[8].strip():  # max_missed_trial_override
+        try:
+            max_missed_trial_override = int(options[8])
+        except ValueError:
+            print(f"Warning: Invalid max_missed_trial_override value: {options[8]}")
+    
+    # Add override parameters to options
+    options.extend([max_reward_override, max_time_override, max_missed_trial_override])
+
     return(options)
 
 
@@ -48,7 +74,10 @@ if __name__ == '__main__':
          training=options[1],
          trainer=options[2],
          record=options[3],
-         forward_file = options[4]).run()
+         forward_file=options[4],
+         max_reward_override=options[9],
+         max_time_override=options[10],
+         max_missed_trial_override=options[11]).run()
 
 
 '''execute: 

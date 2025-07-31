@@ -9,6 +9,8 @@ import os
 import time
 import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
+warnings.simplefilter(action="ignore", category=RuntimeWarning)
+warnings.simplefilter(action="ignore", category=DeprecationWarning)
 import csv
 from PIL import Image 
 import sys
@@ -57,6 +59,7 @@ class UI():
     
     def _init_ui_loop_parameters(self):
         """Initialize variables for check_for_data_update function in the main loop"""
+        print(f"[DEBUG] _init_ui_loop_parameters called - resetting _index from {getattr(self, '_index', 'undefined')} to 0")
         self._index = 0
         self._last_trial = -1
         self._initial_index = 1
@@ -226,7 +229,7 @@ class UI():
 
     def _get_experiment_parameters(self):
         """Get formatted experiment parameters for display."""
-        return [
+        params = [
             f"Rig: {self.menu_selector.rig_var}",
             f"Training: {self.menu_selector.training_var}",
             f"Trainer: {self.menu_selector.trainer_var}",
@@ -234,6 +237,16 @@ class UI():
             f"Record: {self._get_record_value()}",
             f"Forward file: {self._get_forward_file_value()}"
         ]
+        
+        # Add override parameters if they are set
+        if self.menu_selector.max_reward_override is not None:
+            params.append(f"Max Reward: {self.menu_selector.max_reward_override} μL")
+        if self.menu_selector.max_time_override is not None:
+            params.append(f"Max Time: {self.menu_selector.max_time_override // 60} min")
+        if self.menu_selector.max_missed_trial_override is not None:
+            params.append(f"Max Missed Trials: {self.menu_selector.max_missed_trial_override}")
+        
+        return params
 
     def _get_record_value(self):
         """Get the record value safely."""
@@ -294,12 +307,13 @@ class UI():
                         os.remove(PATHS.TEMP_ANALYZED_DATA)
                     if os.path.exists(PATHS.TEMP_IMG_RESIZED):
                         os.remove(PATHS.TEMP_IMG_RESIZED)
-                    return
+                    # Continue monitoring instead of returning
+                    print(f"[DEBUG] Reset complete, continuing to monitor...")
                 
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
-                print(f"[DEBUG] Processing {diff} new rows, current index: {self._index}")
+                print(f"[DEBUG] Processing {diff} new rows, current index: {self._index}, file size: {self._num_rows}")
                 
-                new_index = 0
+                new_index = self._index
                 for i in range(diff):
                     new_index = self._index + 1 + i
                     output_analyzed_data = analyze_data(data, new_index, self._initial_index, self._last_trial)
@@ -309,6 +323,7 @@ class UI():
                             self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
                             self.plot_data()
                         self._last_trial += 1
+                print(f"[DEBUG] Updating _index from {self._index} to {new_index}")
                 self._index = new_index
             else:
                 self._first_change = True
@@ -401,6 +416,10 @@ class UI():
             writer.writerow([str(self.menu_selector.record_var.get())])
             writer.writerow([str(self.menu_selector.forward_file_var.get())])
             writer.writerow([self.menu_selector.text_input_var])
+            # Write override parameters
+            writer.writerow([str(self.menu_selector.max_reward_override) if self.menu_selector.max_reward_override is not None else ""])
+            writer.writerow([str(self.menu_selector.max_time_override) if self.menu_selector.max_time_override is not None else ""])
+            writer.writerow([str(self.menu_selector.max_missed_trial_override) if self.menu_selector.max_missed_trial_override is not None else ""])
         '''run_task.sh will read this data'''
     
     def final_data_plot(self):

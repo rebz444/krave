@@ -18,7 +18,8 @@ import RPi.GPIO as GPIO
 
 
 class Task:
-    def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True):
+    def __init__(self, mouse, rig_name, training, trainer, record=False, forward_file=True, 
+                 max_reward_override=None, max_time_override=None, max_missed_trial_override=None):
         # experiment information
         self.exp_name = utils.get_exp_name(mouse) #  Selected by the system with the mouse name
 
@@ -26,6 +27,13 @@ class Task:
                                "trainer": trainer, "record": record, "forward_file": forward_file}
         self.exp_config = utils.get_config('krave', f'config/{self.exp_name}.json')
         self.hardware_config = utils.get_config('krave.hardware', 'hardware.json')[rig_name]
+        
+        # Set up ending conditions - use override values if provided, otherwise use config defaults
+        self.ending_conditions = {
+            'max_reward': max_reward_override if max_reward_override is not None else self.exp_config['max_reward'],
+            'max_time': max_time_override if max_time_override is not None else self.exp_config['max_time'],
+            'max_missed_trial': max_missed_trial_override if max_missed_trial_override is not None else self.exp_config['max_missed_trial']
+        }
 
         self.task_construction = TaskConstruction(self.exp_config)
         self.total_trial_num, self.session_dict = self.task_construction.get_session_structure()
@@ -217,22 +225,22 @@ class Task:
 
     def check_session_status(self):
         """check if session should end"""
-        if time.time() > self.session_start_time + self.exp_config['max_time']:
+        if time.time() > self.session_start_time + self.ending_conditions['max_time']:
             print("time limit reached")
             self.running = False
             self.ending_code = "time"
-        elif self.total_reward >= self.exp_config['max_reward']:
-            print('max_reward reached')
+        elif self.total_reward >= self.ending_conditions['max_reward']:
+            print('max reward reached')
             self.running = False
             self.ending_code = "reward"
+        elif self.num_miss_trial >= self.ending_conditions['max_missed_trial']:
+            print('max_missed_trial reached')
+            self.running = False
+            self.ending_code = "miss"
         elif self.session_trial_num + 1 == self.total_trial_num:
             print('total_trial_num reached')
             self.running = False
             self.ending_code = "trial"
-        elif self.num_miss_trial >= self.exp_config['max_missed_trial']:
-            print('max_missed_trial reached')
-            self.running = False
-            self.ending_code = "miss"
         else:
             self.running = True
 
