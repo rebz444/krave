@@ -13,7 +13,7 @@ matplotlib==3.9.4
 numpy==1.24.4
 packaging==25.0
 pandas==1.1.5
-paramiko==2.7.2
+paramiko==3.5.1
 picamera==1.13
 pillow==10.4.0
 pycparser==2.22
