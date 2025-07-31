@@ -16,7 +16,6 @@ pandas==1.1.5
 paramiko==2.7.2
 picamera==1.13
 pillow==10.4.0
-pkg_resources==0.0.0
 pycparser==2.22
 pygame==2.6.1
 PyNaCl==1.5.0

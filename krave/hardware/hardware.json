@@ -5,13 +5,13 @@
     "camera_to_box": 27,
     "camera_frequency": 50,
     "lick": 26,
-    "lick_rolling": true,
+    "lick_rolling": false,
     "pump": 21,
     "pump_to_box": 12,
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.066,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
   "rig2":
@@ -26,7 +26,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.067,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
     "rig3":
@@ -41,7 +41,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.067,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
     "rig4":
@@ -56,7 +56,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.065,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
     "rig5":
@@ -71,7 +71,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.067,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
     "rig6":
@@ -86,7 +86,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.067,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
     "rig7":
@@ -101,7 +101,7 @@
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
     "ul_per_turn": 0.067,
-    "calibration_repeats": 3,
+    "calibration_repeats": 6,
     "calibration_num_pulses": 100
   }
 }

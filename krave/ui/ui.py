@@ -11,6 +11,7 @@ import warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.simplefilter(action="ignore", category=RuntimeWarning)
 warnings.simplefilter(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*pygame.*")
 import csv
 from PIL import Image 
 import sys
@@ -95,7 +96,7 @@ class UI():
 
     def plot_data(self, end = False):
         """This functions reads the file created with the analized data and plots it
-        Maybe more work on legend"""
+        Creates two subplots: bg repeat line plot on top, wait time plot on bottom"""
 
         try:
             data = pd.read_csv(PATHS.TEMP_ANALYZED_DATA, delimiter = ",", low_memory=False)
@@ -107,42 +108,50 @@ class UI():
         
         if hasattr(self, 'menu_selector'):
             mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
-        max_wait_time = 0
+        
+        # Create two subplots
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 2])
+        
+        # Prepare data for plotting
+        trials = []
+        bg_repeats = []
+        wait_times = []
+        reward_sizes = []
+        miss_trials = []
+        
         for index, row in data.iterrows():
             trial_num = int(row[DATA_HEADERS.TRIAL])
+            trials.append(trial_num)
+            bg_repeats.append(row[DATA_HEADERS.BG_REPEAT])
+            wait_times.append(row[DATA_HEADERS.WAIT_TIME])
             reward_size = float(row[DATA_HEADERS.REWARD_SIZE]) if not pd.isnull(row[DATA_HEADERS.REWARD_SIZE]) else 0
-            if row[-2] == False:  # MISS_TRIAL is second to last now
-                color = "blue" if reward_size > 0 else "black"
-                plt.plot(trial_num, row[DATA_HEADERS.WAIT_TIME], linestyle="", marker="o", color=color)
-            else:
-                plt.axvspan(trial_num - 0.5, trial_num + 0.5, color = "red", alpha = 0.25)
-            
-            max_wait_time = max(max_wait_time, row[DATA_HEADERS.WAIT_TIME])
-
-        #we get the different heights to create the top numbres (bg repeat)
-        h1 = max_wait_time + (max_wait_time / 100 * 10)
-        h2 = max_wait_time + (max_wait_time / 100 * 15)
-        h3 = max_wait_time + (max_wait_time / 100 * 20)
+            reward_sizes.append(reward_size)
+            miss_trials.append(row[-2])  # MISS_TRIAL is second to last
         
-        #plot the two black lines of separration
-        plt.plot([0, len(data) - 1],[ h1,h1], color = "black")
-        plt.plot([0, len(data) - 1],[ h3,h3], color = "black")
-
-        #Name of axixs and title (now mouse name)
-        plt.xlabel("trial #")
-        plt.ylabel("t (s)")
-        plt.title(mouse_name)
-
-        #Plot the numbers (bg repeat)
-        for index, row in data.iterrows():
-            trial_num = int(row[DATA_HEADERS.TRIAL])
-            plt.text(trial_num, h2, str(row[DATA_HEADERS.BG_REPEAT]), fontsize=12, color='lightseagreen', ha='center', va='center', alpha=0.5)
+        # Top subplot: BG Repeat line plot
+        ax1.plot(trials, bg_repeats, color='lightseagreen', linewidth=2, marker='o', markersize=4)
+        ax1.set_ylabel('BG Repeat')
+        ax1.grid(True, alpha=0.3)
         
-        plt.plot([],[], color = "black", label = "wait time (no reward)")
-        plt.plot([],[], color = "blue", label = "wait time (reward)")
-        plt.plot([],[], color = "lightseagreen", label = "bg repeat", )
-        #plt.subplots_adjust(right=0.75) #Edge in the outside of the graph (problem -- graph compressed)
-        #plt.legend(handletextpad=1, markerscale=15, loc='lower left', bbox_to_anchor=(1, 1))
+        # Bottom subplot: Wait Time plot
+        max_wait_time = 0
+        for i, trial_num in enumerate(trials):
+            if not miss_trials[i]:  # Not a miss trial
+                color = "blue" if reward_sizes[i] > 0 else "black"
+                ax2.plot(trial_num, wait_times[i], linestyle="", marker="o", color=color, markersize=3)
+                max_wait_time = max(max_wait_time, wait_times[i])
+            else:  # Miss trial
+                ax2.axvspan(trial_num - 0.5, trial_num + 0.5, color="red", alpha=0.25)
+        
+        ax2.set_xlabel("Trial #")
+        ax2.set_ylabel("Wait Time (s)")
+        ax2.grid(True, alpha=0.3)
+        
+        # Set main title with mouse name
+        fig.suptitle(mouse_name, fontsize=14, fontweight='bold')
+        
+        # Adjust layout
+        plt.tight_layout()
 
         try:
             plt.savefig(PATHS.TEMP_IMG)
@@ -330,12 +339,24 @@ class UI():
                 self._last_mod_time = os.path.getmtime(self._source_data_path)
                 if hasattr(self, 'menu_selector'):
                     mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
-                plt.xlabel("trial #")
-                plt.ylabel("t (s)")
-                plt.title(mouse_name)
-                plt.plot([], [], color="black", label="wait time")
-                plt.plot([], [], color="lightseagreen", label="bg repeat")
-                plt.xlim(left=0)
+                
+                # Create initial two-subplot structure
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 2])
+                
+                # Top subplot: BG Repeat
+                ax1.set_ylabel('BG Repeat')
+                ax1.grid(True, alpha=0.3)
+                
+                # Bottom subplot: Wait Time
+                ax2.set_xlabel("Trial #")
+                ax2.set_ylabel("Wait Time (s)")
+                ax2.grid(True, alpha=0.3)
+                ax2.set_xlim(left=0)
+                
+                # Set main title with mouse name
+                fig.suptitle(mouse_name, fontsize=14, fontweight='bold')
+                
+                plt.tight_layout()
                 plt.savefig(PATHS.TEMP_IMG)
                 img = Image.open(PATHS.TEMP_IMG)
                 img = img.resize((450, 350))
@@ -358,7 +379,7 @@ class UI():
                 valid_waits = wait_times[wait_times > 0].dropna()
                 if len(valid_waits) > 0:
                     mean_wait = valid_waits.mean()
-                    self.mean_text = f"Mean wait time: {mean_wait:.0f} s"
+                    self.mean_text = f"Mean wait time: {mean_wait:.2f} s"
                 else:
                     self.mean_text = "Mean wait time: N/A"
                 if DATA_HEADERS.REWARD_SIZE in data.columns:

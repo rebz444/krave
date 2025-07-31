@@ -120,18 +120,18 @@ sudo apt install python3-pip python3-dev python3-tk python3-pil \
     libsdl2-mixer-2.0-0 libsdl2-image-2.0-0
 ```
 
-### 2. Clone the Repository
+### 2. Set Up Python Environment
+
+```bash
+python3 -m venv /home/pi/krave-env
+source /home/pi/krave-env/bin/activate
+```
+
+### 3. Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/krave.git
 cd krave
-```
-
-### 3. Set Up Python Environment
-
-```bash
-python3 -m venv krave-env
-source krave-env/bin/activate
 ```
 
 ### 4. Install Python Dependencies
@@ -140,6 +140,20 @@ source krave-env/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+### 5. Configure Geany to Use the Virtual Environment
+
+If you're using Geany as your code editor, configure it to use the Python executable from your virtual environment:
+
+1. Open Geany
+2. Go to **Build > Set Build Commands**
+3. In the "Execute" row, modify the "Command" field to point to the Python executable within your virtual environment:
+
+```bash
+/home/pi/krave-env/bin/python "%f"
+```
+
+This ensures that when you run Python files from Geany, they use the packages installed in your virtual environment rather than the system Python.
 
 ---
 ## Troubleshooting
