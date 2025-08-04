@@ -25,7 +25,7 @@
     "pump_to_box": 12,
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.067,
+    "ul_per_turn": 0.070,
     "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
@@ -55,7 +55,7 @@
     "pump_to_box": 12,
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.065,
+    "ul_per_turn": 0.070,
     "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
@@ -70,7 +70,7 @@
     "pump_to_box": 12,
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.067,
+    "ul_per_turn": 0.068,
     "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
@@ -85,7 +85,7 @@
     "pump_to_box": 12,
     "pump_pulse_to_turns": 2,
     "pump_pulse_interval": 0.03,
-    "ul_per_turn": 0.067,
+    "ul_per_turn": 0.068,
     "calibration_repeats": 6,
     "calibration_num_pulses": 100
   },
