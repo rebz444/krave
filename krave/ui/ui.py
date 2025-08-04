@@ -109,8 +109,8 @@ class UI():
         if hasattr(self, 'menu_selector'):
             mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
         
-        # Create two subplots
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 2])
+        # Create two subplots with shared x-axis
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 3], sharex=True)
         
         # Prepare data for plotting
         trials = []
@@ -132,6 +132,7 @@ class UI():
         ax1.plot(trials, bg_repeats, color='lightseagreen', linewidth=2, marker='o', markersize=4)
         ax1.set_ylabel('BG Repeat')
         ax1.grid(True, alpha=0.3)
+        ax1.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         
         # Bottom subplot: Wait Time plot
         max_wait_time = 0
@@ -340,12 +341,13 @@ class UI():
                 if hasattr(self, 'menu_selector'):
                     mouse_name = getattr(self.menu_selector, 'text_input_var', getattr(self.menu_selector, 'default_mouse_name', None))
                 
-                # Create initial two-subplot structure
-                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 2])
+                # Create initial two-subplot structure with shared x-axis
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), height_ratios=[1, 3], sharex=True)
                 
                 # Top subplot: BG Repeat
                 ax1.set_ylabel('BG Repeat')
                 ax1.grid(True, alpha=0.3)
+                ax1.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
                 
                 # Bottom subplot: Wait Time
                 ax2.set_xlabel("Trial #")
