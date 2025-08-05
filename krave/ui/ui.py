@@ -129,7 +129,7 @@ class UI():
             miss_trials.append(row[-2])  # MISS_TRIAL is second to last
         
         # Top subplot: BG Repeat line plot
-        ax1.plot(trials, bg_repeats, color='lightseagreen', linewidth=2, marker='o', markersize=4)
+        ax1.plot(trials, bg_repeats, color='lightseagreen', linewidth=2, marker='o', markersize=3)
         ax1.set_ylabel('BG Repeat')
         ax1.grid(True, alpha=0.3)
         ax1.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
@@ -147,6 +147,7 @@ class UI():
         ax2.set_xlabel("Trial #")
         ax2.set_ylabel("Wait Time (s)")
         ax2.grid(True, alpha=0.3)
+        ax2.set_xlim(left=0)
         
         # Set main title with mouse name
         fig.suptitle(mouse_name, fontsize=14, fontweight='bold')

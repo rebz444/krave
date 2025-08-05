@@ -4,3 +4,5 @@ __pycache__/
 *.py[cod]
 *$py.class
 krave/ui/last_exp_params.json
+calibrate_pump.py
+free_reward.py
