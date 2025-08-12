@@ -60,7 +60,6 @@ class UI():
     
     def _init_ui_loop_parameters(self):
         """Initialize variables for check_for_data_update function in the main loop"""
-        print(f"[DEBUG] _init_ui_loop_parameters called - resetting _index from {getattr(self, '_index', 'undefined')} to 0")
         self._index = 0
         self._last_trial = -1
         self._initial_index = 1
@@ -279,8 +278,6 @@ class UI():
             data = pd.read_csv(self._source_data_path, delimiter = ",", low_memory=False)
             old_num_rows = self._num_rows
             self._num_rows = len(data)  # Use DataFrame length instead of separate file read
-            if old_num_rows is not None and old_num_rows != self._num_rows:
-                print(f"[DEBUG] File size updated: {old_num_rows} → {self._num_rows} rows")
             return data
         except Exception as e:
             print(f"Error reading file: {e}")
@@ -307,8 +304,6 @@ class UI():
                 
                 # Check for file reindexing (index went backwards)
                 if self._num_rows < self._index:
-                    print(f"[DEBUG] File reindexed! Previous index: {self._index}, Current file size: {self._num_rows}")
-                    print(f"[DEBUG] Resetting to handle file restart...")
                     # Reset tracking variables
                     self._index = 0
                     self._last_trial = -1
@@ -319,10 +314,8 @@ class UI():
                     if os.path.exists(PATHS.TEMP_IMG_RESIZED):
                         os.remove(PATHS.TEMP_IMG_RESIZED)
                     # Continue monitoring instead of returning
-                    print(f"[DEBUG] Reset complete, continuing to monitor...")
                 
                 diff = (self._num_rows - 2) - self._index #New rows added since last check
-                print(f"[DEBUG] Processing {diff} new rows, current index: {self._index}, file size: {self._num_rows}")
                 
                 new_index = self._index
                 for i in range(diff):
@@ -334,7 +327,6 @@ class UI():
                             self.write_TEMP_ANALYZED_DATA_csv(output_analyzed_data)
                             self.plot_data()
                         self._last_trial += 1
-                print(f"[DEBUG] Updating _index from {self._index} to {new_index}")
                 self._index = new_index
             else:
                 self._first_change = True
@@ -392,7 +384,6 @@ class UI():
                 else:
                     self.total_rewards_text = "Total rewards: N/A"
             except Exception as e:
-                print(f"[DEBUG] Error updating display texts: {e}")
                 self.mean_text = "Mean wait time: N/A"
                 self.total_rewards_text = "Total rewards: N/A"
 
