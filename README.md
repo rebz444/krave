@@ -130,7 +130,7 @@ source /home/pi/krave-env/bin/activate
 ### 3. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/krave.git
+git clone https://github.com/rebz444/krave.git
 cd krave
 ```
 
